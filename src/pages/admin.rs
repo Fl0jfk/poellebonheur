@@ -4,7 +4,16 @@ use dioxus::prelude::*;
 use gloo_storage::{LocalStorage, Storage};
 
 use crate::models::{CreateMenuItemPayload, MarketInfo, MenuCategory, MenuData, MenuItem, QuoteRequest, QuotesData};
-use crate::server::functions::*;
+
+// Credentials compilés à la build depuis les variables d'env Vercel
+const ADMIN_PASSWORD: &str = match option_env!("ADMIN_PASSWORD") {
+    Some(v) => v,
+    None    => "admin",
+};
+const ADMIN_API_KEY: &str = match option_env!("ADMIN_API_KEY") {
+    Some(v) => v,
+    None    => "",
+};
 
 // ── Page admin ────────────────────────────────────────────────────────────────
 
@@ -60,17 +69,14 @@ fn LoginForm(on_success: EventHandler<()>) -> Element {
                         loading.set(true);
                         error.set(None);
                         let pwd = password();
-                        spawn(async move {
-                            match admin_login(pwd).await {
-                                Ok(true) => {
-                                    #[cfg(target_arch = "wasm32")]
-                                    { let _ = LocalStorage::set("admin_auth", true); }
-                                    on_success.call(());
-                                }
-                                Ok(false) | Err(_) => error.set(Some("Mot de passe incorrect".to_string())),
-                            }
-                            loading.set(false);
-                        });
+                        if pwd == ADMIN_PASSWORD {
+                            #[cfg(target_arch = "wasm32")]
+                            { let _ = LocalStorage::set("admin_auth", true); }
+                            on_success.call(());
+                        } else {
+                            error.set(Some("Mot de passe incorrect".to_string()));
+                        }
+                        loading.set(false);
                     },
 
                     div {
@@ -296,28 +302,32 @@ fn MenuPanel() -> Element {
                     onsubmit: move |ev| {
                         ev.prevent_default();
                         if saving() { return; }
-                        let cat = match category().as_str() {
-                            "main_dish" => MenuCategory::MainDish,
-                            "dessert"   => MenuCategory::Dessert,
-                            _           => MenuCategory::Starter,
+                        let cat_str = match category().as_str() {
+                            "main_dish" => "MainDish",
+                            "dessert"   => "Dessert",
+                            _           => "Starter",
                         };
                         let payload = CreateMenuItemPayload {
                             name:        name(),
                             description: description(),
-                            category:    cat,
+                            category:    match cat_str {
+                                "MainDish" => MenuCategory::MainDish,
+                                "Dessert"  => MenuCategory::Dessert,
+                                _          => MenuCategory::Starter,
+                            },
                             price_info:  if price_info().is_empty() { None } else { Some(price_info()) },
                         };
                         saving.set(true);
                         form_error.set(None);
                         spawn(async move {
-                            match create_menu_item(payload).await {
+                            match api_create_menu_item(payload).await {
                                 Ok(_) => {
                                     name.set(String::new());
                                     description.set(String::new());
                                     price_info.set(String::new());
                                     menu_resource.restart();
                                 }
-                                Err(e) => form_error.set(Some(format!("{e}"))),
+                                Err(e) => form_error.set(Some(e)),
                             }
                             saving.set(false);
                         });
@@ -382,7 +392,7 @@ fn MenuPanel() -> Element {
                                     for item in items {
                                         MenuItemRow { item, on_delete: move |id: String| {
                                             spawn(async move {
-                                                if delete_menu_item(id).await.is_ok() {
+                                                if api_delete_menu_item(id).await.is_ok() {
                                                     menu_resource.restart();
                                                 }
                                             });
@@ -471,9 +481,9 @@ fn MarketPanel() -> Element {
                             active: active(),
                         };
                         spawn(async move {
-                            match update_market(info).await {
+                            match api_update_market(info).await {
                                 Ok(_)  => saved.set(true),
-                                Err(e) => err_msg.set(Some(format!("{e}"))),
+                                Err(e) => err_msg.set(Some(e)),
                             }
                             saving.set(false);
                         });
@@ -514,4 +524,66 @@ fn MarketPanel() -> Element {
             }
         }
     }
+}
+
+// ── Appels aux Vercel Functions ───────────────────────────────────────────────
+
+fn admin_client() -> reqwest::Client {
+    let mut headers = reqwest::header::HeaderMap::new();
+    if !ADMIN_API_KEY.is_empty() {
+        if let Ok(v) = reqwest::header::HeaderValue::from_str(ADMIN_API_KEY) {
+            headers.insert("x-admin-key", v);
+        }
+    }
+    reqwest::Client::builder()
+        .default_headers(headers)
+        .build()
+        .unwrap_or_default()
+}
+
+async fn api_update_market(info: MarketInfo) -> Result<(), String> {
+    let resp = admin_client()
+        .post("/api/admin/market")
+        .json(&info)
+        .send()
+        .await
+        .map_err(|e| format!("Erreur réseau : {e}"))?;
+
+    if resp.status().is_success() { Ok(()) }
+    else { Err(format!("Erreur {}", resp.status())) }
+}
+
+async fn api_create_menu_item(payload: CreateMenuItemPayload) -> Result<(), String> {
+    let body = serde_json::json!({
+        "action":      "create",
+        "name":        payload.name,
+        "description": payload.description,
+        "category":    format!("{:?}", payload.category),
+        "price_info":  payload.price_info,
+    });
+    let resp = admin_client()
+        .post("/api/admin/menu")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Erreur réseau : {e}"))?;
+
+    if resp.status().is_success() { Ok(()) }
+    else {
+        let msg = resp.text().await.unwrap_or_else(|_| "Erreur serveur".into());
+        Err(msg)
+    }
+}
+
+async fn api_delete_menu_item(id: String) -> Result<(), String> {
+    let body = serde_json::json!({ "action": "delete", "id": id });
+    let resp = admin_client()
+        .post("/api/admin/menu")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Erreur réseau : {e}"))?;
+
+    if resp.status().is_success() { Ok(()) }
+    else { Err(format!("Erreur {}", resp.status())) }
 }

@@ -1,7 +1,6 @@
 use dioxus::prelude::*;
 use crate::components::{footer::Footer, navbar::Navbar};
 use crate::models::{CreateQuotePayload, MenuCategory, MenuData};
-use crate::server::functions::create_quote;
 
 #[component]
 pub fn Devis() -> Element {
@@ -33,7 +32,6 @@ pub fn Devis() -> Element {
         main { class: "flex-1 pt-24 pb-16",
             div { class: "max-w-3xl mx-auto px-6",
 
-                // Header
                 div { class: "text-center mb-12",
                     span { class: "section-label text-safran-600 block mb-3", "Gratuit & sans engagement" }
                     h1 { class: "font-display text-4xl md:text-5xl text-ardoise-800 mb-4", "Votre devis 🍽️" }
@@ -79,9 +77,9 @@ pub fn Devis() -> Element {
                                 message:          if message().is_empty() { None } else { Some(message()) },
                             };
                             spawn(async move {
-                                match create_quote(payload).await {
+                                match send_devis(&payload).await {
                                     Ok(_)  => success.set(true),
-                                    Err(e) => error_msg.set(Some(format!("{e}"))),
+                                    Err(e) => error_msg.set(Some(e)),
                                 }
                                 submitting.set(false);
                             });
@@ -251,12 +249,10 @@ pub fn Devis() -> Element {
                             }
                         }
 
-                        // Erreur
                         if let Some(msg) = error_msg() {
                             div { class: "bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm", "{msg}" }
                         }
 
-                        // Bouton submit
                         button {
                             r#type: "submit",
                             class: "btn btn-safran w-full justify-center text-base py-4 shadow-lg",
@@ -268,6 +264,36 @@ pub fn Devis() -> Element {
             }
         }
         Footer {}
-        } // end flex col
+        }
+    }
+}
+
+async fn send_devis(payload: &CreateQuotePayload) -> Result<(), String> {
+    let body = serde_json::json!({
+        "last_name":        payload.last_name,
+        "first_name":       payload.first_name,
+        "phone":            payload.phone,
+        "email":            payload.email,
+        "event_date":       payload.event_date,
+        "event_place":      payload.event_place,
+        "number_of_people": payload.number_of_people,
+        "starters":         payload.starters,
+        "main_dish":        payload.main_dish,
+        "desserts":         payload.desserts,
+        "message":          payload.message,
+    });
+
+    let resp = reqwest::Client::new()
+        .post("/api/send-devis")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Erreur réseau : {e}"))?;
+
+    if resp.status().is_success() {
+        Ok(())
+    } else {
+        let msg = resp.text().await.unwrap_or_else(|_| "Erreur serveur".into());
+        Err(format!("Erreur : {msg}"))
     }
 }
