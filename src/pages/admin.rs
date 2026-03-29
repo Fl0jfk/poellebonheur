@@ -1,514 +1,517 @@
-use leptos::*;
-use leptos_router::use_navigate;
+use dioxus::prelude::*;
 
-use crate::models::{CreateMenuItemPayload, MarketInfo, MenuCategory, QuoteStatus};
+#[cfg(target_arch = "wasm32")]
+use gloo_storage::{LocalStorage, Storage};
+
+use crate::models::{CreateMenuItemPayload, MarketInfo, MenuCategory, MenuData, MenuItem, QuoteRequest, QuotesData};
 use crate::server::functions::*;
 
-// ── Page principale ───────────────────────────────────────────────────────────
+// ── Page admin ────────────────────────────────────────────────────────────────
 
 #[component]
-pub fn AdminPage() -> impl IntoView {
-    let auth = create_resource(|| (), |_| check_admin_auth());
+pub fn Admin() -> Element {
+    let mut auth_resource = use_resource(|| async move {
+        #[cfg(target_arch = "wasm32")]
+        { return LocalStorage::get::<bool>("admin_auth").unwrap_or(false); }
+        #[allow(unreachable_code)]
+        false
+    });
 
-    view! {
-        <div class="min-h-screen bg-cream-50">
-            <Suspense fallback=move || view! {
-                <div class="min-h-screen flex items-center justify-center">
-                    <div class="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-            }>
-                {move || auth.get().map(|result: Result<bool, _>| {
-                    let is_auth = result.unwrap_or(false);
-                    if is_auth {
-                        view! { <AdminDashboard/> }.into_view()
-                    } else {
-                        view! { <LoginForm on_success=move || auth.refetch() /> }.into_view()
-                    }
-                })}
-            </Suspense>
-        </div>
+    let Some(is_auth) = *auth_resource.read_unchecked() else {
+        return rsx! {
+            div { class: "min-h-screen flex items-center justify-center",
+                div { class: "w-10 h-10 border-4 border-bordeaux-700 border-t-transparent rounded-full animate-spin" }
+            }
+        };
+    };
+
+    if !is_auth {
+        rsx! {
+            LoginForm {
+                on_success: move |_| auth_resource.restart()
+            }
+        }
+    } else {
+        rsx! { AdminDashboard {} }
     }
 }
 
 // ── Formulaire de connexion ───────────────────────────────────────────────────
 
 #[component]
-fn LoginForm(on_success: impl Fn() + 'static) -> impl IntoView {
-    let (password, set_password) = create_signal(String::new());
-    let (loading,  set_loading)  = create_signal(false);
-    let (error,    set_error)    = create_signal::<Option<String>>(None);
+fn LoginForm(on_success: EventHandler<()>) -> Element {
+    let mut password = use_signal(|| String::new());
+    let mut loading  = use_signal(|| false);
+    let mut error    = use_signal(|| Option::<String>::None);
 
-    let on_success = std::rc::Rc::new(on_success);
+    rsx! {
+        div { class: "min-h-screen flex items-center justify-center px-4",
+            div { class: "bg-white rounded-3xl shadow-xl p-10 w-full max-w-sm",
+                div { class: "text-center mb-8",
+                    div { class: "text-5xl mb-4", "🔐" }
+                    h1 { class: "font-display text-2xl text-ardoise-900", "Espace admin" }
+                    p { class: "text-ardoise-600 text-sm mt-1", "La Poêlée du Bonheur" }
+                }
+                form {
+                    class: "space-y-5",
+                    onsubmit: move |ev| {
+                        ev.prevent_default();
+                        if loading() { return; }
+                        loading.set(true);
+                        error.set(None);
+                        let pwd = password();
+                        spawn(async move {
+                            match admin_login(pwd).await {
+                                Ok(true) => {
+                                    #[cfg(target_arch = "wasm32")]
+                                    { let _ = LocalStorage::set("admin_auth", true); }
+                                    on_success.call(());
+                                }
+                                Ok(false) | Err(_) => error.set(Some("Mot de passe incorrect".to_string())),
+                            }
+                            loading.set(false);
+                        });
+                    },
 
-    let on_submit = move |ev: ev::SubmitEvent| {
-        ev.prevent_default();
-        if loading.get() { return; }
-        set_loading.set(true);
-        set_error.set(None);
-        let pwd = password.get();
-        let on_success = on_success.clone();
-        spawn_local(async move {
-            match admin_login(pwd).await {
-                Ok(_)  => on_success(),
-                Err(e) => set_error.set(Some(format!("{e}"))),
+                    div {
+                        label { class: "form-label", "Mot de passe" }
+                        input {
+                            r#type: "password",
+                            class: "form-input",
+                            placeholder: "••••••••",
+                            required: true,
+                            autofocus: true,
+                            value: password(),
+                            oninput: move |e| password.set(e.value())
+                        }
+                    }
+                    if let Some(msg) = error() {
+                        p { class: "text-red-600 text-sm", "{msg}" }
+                    }
+                    button {
+                        r#type: "submit",
+                        class: "btn btn-safran w-full justify-center py-3",
+                        disabled: loading(),
+                        if loading() { "Connexion..." } else { "Se connecter" }
+                    }
+                }
             }
-            set_loading.set(false);
-        });
-    };
-
-    view! {
-        <div class="min-h-screen flex items-center justify-center px-4">
-            <div class="bg-white rounded-3xl shadow-xl p-10 w-full max-w-sm">
-                <div class="text-center mb-8">
-                    <div class="text-5xl mb-4">"🔐"</div>
-                    <h1 class="font-display text-2xl text-cream-900">"Espace admin"</h1>
-                    <p class="text-cream-600 text-sm mt-1">"Nusha Traiteur"</p>
-                </div>
-                <form on:submit=on_submit class="space-y-5">
-                    <div>
-                        <label class="form-label">"Mot de passe"</label>
-                        <input
-                            type="password"
-                            class="form-input"
-                            placeholder="••••••••"
-                            required
-                            autofocus
-                            prop:value=password
-                            on:input=move |e| set_password.set(event_target_value(&e))
-                        />
-                    </div>
-                    {move || error.get().map(|msg| view! {
-                        <p class="text-red-600 text-sm">{msg}</p>
-                    })}
-                    <button
-                        type="submit"
-                        class="btn btn-primary w-full justify-center py-3"
-                        disabled=move || loading.get()
-                    >
-                        {move || if loading.get() { "Connexion..." } else { "Se connecter" }}
-                    </button>
-                </form>
-            </div>
-        </div>
+        }
     }
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 #[component]
-fn AdminDashboard() -> impl IntoView {
-    let (active_tab, set_active_tab) = create_signal("quotes");
+fn AdminDashboard() -> Element {
+    let active_tab: Signal<&'static str> = use_signal(|| "quotes");
 
-    let logout_action = create_action(|_: &()| admin_logout());
-    let navigate = use_navigate();
-    let _ = create_effect(move |_| {
-        if logout_action.value().get().and_then(|r: Result<(), _>| r.ok()).is_some() {
-            navigate("/admin", Default::default());
-        }
-    });
-
-    view! {
-        <div>
-            // Topbar
-            <header class="bg-white border-b border-cream-200 sticky top-0 z-30">
-                <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <h1 class="font-display text-xl text-cream-900">"Admin — Nusha Traiteur"</h1>
-                    <button
-                        class="btn btn-outline text-sm px-4 py-2"
-                        on:click=move |_| logout_action.dispatch(())
-                    >
+    rsx! {
+        div {
+            header { class: "bg-white border-b border-creme-200 sticky top-0 z-30",
+                div { class: "max-w-6xl mx-auto px-6 py-4 flex items-center justify-between",
+                    h1 { class: "font-display text-xl text-ardoise-900", "Admin — La Poêlée du Bonheur" }
+                    button {
+                        class: "btn btn-ghost text-sm px-4 py-2",
+                        onclick: move |_| {
+                            #[cfg(target_arch = "wasm32")]
+                            { LocalStorage::delete("admin_auth"); }
+                            #[cfg(target_arch = "wasm32")]
+                            if let Some(window) = web_sys::window() {
+                                let _ = window.location().reload();
+                            }
+                        },
                         "Déconnexion"
-                    </button>
-                </div>
-            </header>
+                    }
+                }
+            }
 
-            // Tabs
-            <div class="max-w-6xl mx-auto px-6 pt-8">
-                <div class="flex gap-2 mb-8 border-b border-cream-200">
-                    <TabButton label="Devis" id="quotes" active=active_tab set_active=set_active_tab />
-                    <TabButton label="Menu" id="menu" active=active_tab set_active=set_active_tab />
-                    <TabButton label="Marché" id="market" active=active_tab set_active=set_active_tab />
-                </div>
+            div { class: "max-w-6xl mx-auto px-6 pt-8",
+                div { class: "flex gap-2 mb-8 border-b border-creme-200",
+                    TabButton { label: "Devis", id: "quotes", active: active_tab }
+                    TabButton { label: "Menu", id: "menu", active: active_tab }
+                    TabButton { label: "Marché", id: "market", active: active_tab }
+                }
 
-                {move || match active_tab.get() {
-                    "quotes" => view! { <QuotesPanel/> }.into_view(),
-                    "menu"   => view! { <MenuPanel/> }.into_view(),
-                    "market" => view! { <MarketPanel/> }.into_view(),
-                    _        => view! { <div></div> }.into_view(),
-                }}
-            </div>
-        </div>
+                match active_tab() {
+                    "quotes" => rsx! { QuotesPanel {} },
+                    "menu"   => rsx! { MenuPanel {} },
+                    "market" => rsx! { MarketPanel {} },
+                    _        => rsx! {},
+                }
+            }
+        }
     }
 }
 
 #[component]
-fn TabButton(
-    label: &'static str,
-    id: &'static str,
-    active: ReadSignal<&'static str>,
-    set_active: WriteSignal<&'static str>,
-) -> impl IntoView {
-    view! {
-        <button
-            class=move || {
-                if active.get() == id {
-                    "px-4 py-2.5 text-sm font-semibold text-primary-600 border-b-2 border-primary-600 -mb-px"
-                } else {
-                    "px-4 py-2.5 text-sm font-medium text-cream-600 hover:text-primary-600 border-b-2 border-transparent -mb-px"
-                }
-            }
-            on:click=move |_| set_active.set(id)
-        >
-            {label}
-        </button>
+fn TabButton(label: &'static str, id: &'static str, mut active: Signal<&'static str>) -> Element {
+    let is_active = active() == id;
+    rsx! {
+        button {
+            class: if is_active {
+                "px-4 py-2.5 text-sm font-semibold text-bordeaux-700 border-b-2 border-bordeaux-700 -mb-px"
+            } else {
+                "px-4 py-2.5 text-sm font-medium text-ardoise-600 hover:text-bordeaux-700 border-b-2 border-transparent -mb-px"
+            },
+            onclick: move |_| active.set(id),
+            "{label}"
+        }
     }
 }
 
 // ── Onglet Devis ─────────────────────────────────────────────────────────────
 
 #[component]
-fn QuotesPanel() -> impl IntoView {
-    let quotes = create_resource(|| (), |_| get_quotes());
+fn QuotesPanel() -> Element {
+    let s3_base = "https://poellebonheur.s3.eu-west-3.amazonaws.com";
+    let mut quotes_resource = use_resource(move || async move {
+        let url = format!("{s3_base}/data/quotes.json");
+        reqwest::get(&url).await.ok()?.json::<QuotesData>().await.ok()
+    });
 
-    view! {
-        <div class="pb-16">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="font-display text-2xl text-cream-900">"Demandes de devis"</h2>
-                <button
-                    class="btn btn-outline text-sm px-4 py-2"
-                    on:click=move |_| quotes.refetch()
-                >
+    rsx! {
+        div { class: "pb-16",
+            div { class: "flex items-center justify-between mb-6",
+                h2 { class: "font-display text-2xl text-ardoise-900", "Demandes de devis" }
+                button {
+                    class: "btn btn-ghost text-sm px-4 py-2",
+                    onclick: move |_| quotes_resource.restart(),
                     "Actualiser"
-                </button>
-            </div>
+                }
+            }
 
-            <Suspense fallback=move || view! {
-                <div class="flex justify-center py-12">
-                    <div class="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-            }>
-                {move || quotes.get().map(|result: Result<crate::models::QuotesData, leptos::ServerFnError>| match result {
-                    Err(e) => view! {
-                        <p class="text-red-600 py-4">"Erreur : "{format!("{e}")}</p>
-                    }.into_view(),
-                    Ok(data) if data.quotes.is_empty() => view! {
-                        <div class="text-center py-16 text-cream-500">
-                            <div class="text-5xl mb-4">"📭"</div>
-                            <p>"Aucune demande de devis pour le moment."</p>
-                        </div>
-                    }.into_view(),
-                    Ok(data) => {
-                        let mut quotes_sorted = data.quotes.clone();
-                        quotes_sorted.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-                        view! {
-                            <div class="space-y-4">
-                                {quotes_sorted.into_iter().map(|q| {
-                                    let status_cls = match q.status {
-                                        QuoteStatus::Pending  => "tag bg-yellow-100 text-yellow-700",
-                                        QuoteStatus::Viewed   => "tag bg-blue-100 text-blue-700",
-                                        QuoteStatus::Replied  => "tag bg-green-100 text-green-700",
-                                    };
-                                    let status_label = match q.status {
-                                        QuoteStatus::Pending  => "En attente",
-                                        QuoteStatus::Viewed   => "Vue",
-                                        QuoteStatus::Replied  => "Répondue",
-                                    };
-                                    view! {
-                                        <div class="bg-white rounded-2xl shadow-sm border border-cream-200 p-6">
-                                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-                                                <div>
-                                                    <h3 class="font-semibold text-cream-900 text-lg">
-                                                        {format!("{} {}", q.first_name, q.last_name)}
-                                                    </h3>
-                                                    <p class="text-cream-500 text-sm">{q.created_at.chars().take(10).collect::<String>()}</p>
-                                                </div>
-                                                <span class=status_cls>{status_label}</span>
-                                            </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
-                                                <div>
-                                                    <span class="text-cream-500">"📧 "</span>
-                                                    <a href=format!("mailto:{}", q.email) class="text-primary-600 hover:underline">{q.email}</a>
-                                                </div>
-                                                {if !q.phone.is_empty() { view! {
-                                                    <div>
-                                                        <span class="text-cream-500">"📞 "</span>
-                                                        <a href=format!("tel:{}", q.phone) class="text-primary-600 hover:underline">{q.phone}</a>
-                                                    </div>
-                                                }.into_view()} else { view! { <div></div> }.into_view() }}
-                                                <div>
-                                                    <span class="text-cream-500">"📅 "</span>
-                                                    {if q.event_date.is_empty() { "Date non précisée".to_string() } else { q.event_date }}
-                                                </div>
-                                                <div>
-                                                    <span class="text-cream-500">"👥 "</span>
-                                                    {format!("{} personnes", q.number_of_people)}
-                                                </div>
-                                                {if !q.event_place.is_empty() { view! {
-                                                    <div class="sm:col-span-2">
-                                                        <span class="text-cream-500">"📍 "</span>
-                                                        {q.event_place}
-                                                    </div>
-                                                }.into_view()} else { view! {<div></div>}.into_view() }}
-                                            </div>
-                                            <div class="border-t border-cream-100 pt-3 text-sm space-y-1.5">
-                                                {if !q.starters.is_empty() { view! {
-                                                    <p><span class="text-cream-500 font-medium">"Entrées : "</span>{q.starters.join(", ")}</p>
-                                                }.into_view()} else { view! {<span></span>}.into_view() }}
-                                                {if !q.main_dish.is_empty() { view! {
-                                                    <p><span class="text-cream-500 font-medium">"Plat : "</span>{q.main_dish}</p>
-                                                }.into_view()} else { view! {<span></span>}.into_view() }}
-                                                {if !q.desserts.is_empty() { view! {
-                                                    <p><span class="text-cream-500 font-medium">"Desserts : "</span>{q.desserts.join(", ")}</p>
-                                                }.into_view()} else { view! {<span></span>}.into_view() }}
-                                                {q.message.map(|m| view! {
-                                                    <p class="text-cream-600 italic mt-2">"\""  {m} "\""</p>
-                                                })}
-                                            </div>
-                                        </div>
+            {
+                let q_ref = quotes_resource.read();
+                match q_ref.as_ref() {
+                    None => rsx! {
+                        div { class: "flex justify-center py-12",
+                            div { class: "w-8 h-8 border-4 border-bordeaux-700 border-t-transparent rounded-full animate-spin" }
+                        }
+                    },
+                    Some(None) => rsx! {
+                        p { class: "text-ardoise-500 py-4 italic", "Aucune demande de devis pour le moment." }
+                    },
+                    Some(Some(data)) => {
+                        let mut sorted = data.quotes.clone();
+                        sorted.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+                        if sorted.is_empty() {
+                            rsx! {
+                                div { class: "text-center py-16 text-ardoise-500",
+                                    div { class: "text-5xl mb-4", "📭" }
+                                    p { "Aucune demande pour le moment." }
+                                }
+                            }
+                        } else {
+                            rsx! {
+                                div { class: "space-y-4",
+                                    for q in sorted {
+                                        QuoteCard { q }
                                     }
-                                }).collect_view()}
-                            </div>
-                        }.into_view()
+                                }
+                            }
+                        }
                     }
-                })}
-            </Suspense>
-        </div>
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn QuoteCard(q: QuoteRequest) -> Element {
+    let date_short  = q.created_at.get(..10).unwrap_or(&q.created_at).to_string();
+    let event_date  = if q.event_date.is_empty() { "Date non précisée".to_string() } else { q.event_date.clone() };
+    let starters    = q.starters.join(", ");
+    let desserts    = q.desserts.join(", ");
+    let full_name   = format!("{} {}", q.first_name, q.last_name);
+    let people      = q.number_of_people.to_string();
+
+    rsx! {
+        div { class: "bg-white rounded-2xl shadow-sm border border-creme-200 p-6",
+            div { class: "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4",
+                div {
+                    h3 { class: "font-semibold text-ardoise-900 text-lg", "{full_name}" }
+                    p { class: "text-ardoise-500 text-sm", "{date_short}" }
+                }
+            }
+            div { class: "grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4",
+                div {
+                    span { class: "text-ardoise-500", "📧 " }
+                    a { href: "mailto:{q.email}", class: "text-bordeaux-600 hover:underline", "{q.email}" }
+                }
+                if !q.phone.is_empty() {
+                    div {
+                        span { class: "text-ardoise-500", "📞 " }
+                        a { href: "tel:{q.phone}", class: "text-bordeaux-600 hover:underline", "{q.phone}" }
+                    }
+                }
+                div { "📅 {event_date}" }
+                div { "👥 {people} personnes" }
+                if !q.event_place.is_empty() {
+                    div { class: "sm:col-span-2", "📍 {q.event_place}" }
+                }
+            }
+            div { class: "border-t border-creme-100 pt-3 text-sm space-y-1",
+                if !starters.is_empty() {
+                    p { span { class: "text-ardoise-500 font-medium", "Entrées : " } "{starters}" }
+                }
+                if !q.main_dish.is_empty() {
+                    p { span { class: "text-ardoise-500 font-medium", "Plat : " } "{q.main_dish}" }
+                }
+                if !desserts.is_empty() {
+                    p { span { class: "text-ardoise-500 font-medium", "Desserts : " } "{desserts}" }
+                }
+                if let Some(m) = q.message {
+                    p { class: "text-ardoise-600 italic mt-2", "{m}" }
+                }
+            }
+        }
     }
 }
 
 // ── Onglet Menu ───────────────────────────────────────────────────────────────
 
 #[component]
-fn MenuPanel() -> impl IntoView {
-    let menu = create_resource(|| (), |_| get_menu());
+fn MenuPanel() -> Element {
+    let s3_base = "https://poellebonheur.s3.eu-west-3.amazonaws.com";
+    let mut menu_resource = use_resource(move || async move {
+        let url = format!("{s3_base}/data/menu.json");
+        reqwest::get(&url).await.ok()?.json::<MenuData>().await.ok()
+    });
 
-    let (name,        set_name)        = create_signal(String::new());
-    let (description, set_description) = create_signal(String::new());
-    let (category,    set_category)    = create_signal("starter".to_string());
-    let (price_info,  set_price_info)  = create_signal(String::new());
-    let (form_error,  set_form_error)  = create_signal::<Option<String>>(None);
-    let (saving,      set_saving)      = create_signal(false);
+    let mut name        = use_signal(|| String::new());
+    let mut description = use_signal(|| String::new());
+    let mut category    = use_signal(|| "starter".to_string());
+    let mut price_info  = use_signal(|| String::new());
+    let mut form_error  = use_signal(|| Option::<String>::None);
+    let mut saving      = use_signal(|| false);
 
-    let on_add = move |ev: ev::SubmitEvent| {
-        ev.prevent_default();
-        if saving.get() { return; }
-        let cat = match category.get().as_str() {
-            "main_dish" => MenuCategory::MainDish,
-            "dessert"   => MenuCategory::Dessert,
-            _           => MenuCategory::Starter,
-        };
-        let payload = CreateMenuItemPayload {
-            name:        name.get(),
-            description: description.get(),
-            category:    cat,
-            price_info:  if price_info.get().is_empty() { None } else { Some(price_info.get()) },
-        };
-        set_saving.set(true);
-        set_form_error.set(None);
-        spawn_local(async move {
-            match create_menu_item(payload).await {
-                Ok(_) => {
-                    set_name.set(String::new());
-                    set_description.set(String::new());
-                    set_price_info.set(String::new());
-                    menu.refetch();
+    rsx! {
+        div { class: "pb-16 space-y-10",
+            div { class: "bg-white rounded-2xl shadow-sm border border-creme-200 p-6",
+                h2 { class: "font-display text-xl text-ardoise-900 mb-5", "Ajouter un plat" }
+                form {
+                    class: "space-y-4",
+                    onsubmit: move |ev| {
+                        ev.prevent_default();
+                        if saving() { return; }
+                        let cat = match category().as_str() {
+                            "main_dish" => MenuCategory::MainDish,
+                            "dessert"   => MenuCategory::Dessert,
+                            _           => MenuCategory::Starter,
+                        };
+                        let payload = CreateMenuItemPayload {
+                            name:        name(),
+                            description: description(),
+                            category:    cat,
+                            price_info:  if price_info().is_empty() { None } else { Some(price_info()) },
+                        };
+                        saving.set(true);
+                        form_error.set(None);
+                        spawn(async move {
+                            match create_menu_item(payload).await {
+                                Ok(_) => {
+                                    name.set(String::new());
+                                    description.set(String::new());
+                                    price_info.set(String::new());
+                                    menu_resource.restart();
+                                }
+                                Err(e) => form_error.set(Some(format!("{e}"))),
+                            }
+                            saving.set(false);
+                        });
+                    },
+
+                    div { class: "grid grid-cols-1 sm:grid-cols-2 gap-4",
+                        div {
+                            label { class: "form-label", "Nom *" }
+                            input { r#type: "text", class: "form-input", required: true,
+                                value: name(), oninput: move |e| name.set(e.value()) }
+                        }
+                        div {
+                            label { class: "form-label", "Catégorie" }
+                            select {
+                                class: "form-input",
+                                onchange: move |e| category.set(e.value()),
+                                option { value: "starter", "Entrée" }
+                                option { value: "main_dish", "Plat principal" }
+                                option { value: "dessert", "Dessert" }
+                            }
+                        }
+                    }
+                    div {
+                        label { class: "form-label", "Description" }
+                        input { r#type: "text", class: "form-input",
+                            value: description(), oninput: move |e| description.set(e.value()) }
+                    }
+                    div {
+                        label { class: "form-label", "Info prix (optionnel)" }
+                        input { r#type: "text", class: "form-input", placeholder: "ex: 8€/pers.",
+                            value: price_info(), oninput: move |e| price_info.set(e.value()) }
+                    }
+                    if let Some(msg) = form_error() {
+                        p { class: "text-red-600 text-sm", "{msg}" }
+                    }
+                    button {
+                        r#type: "submit",
+                        class: "btn btn-safran px-6",
+                        disabled: saving(),
+                        if saving() { "Ajout..." } else { "Ajouter le plat" }
+                    }
                 }
-                Err(e) => set_form_error.set(Some(format!("{e}"))),
             }
-            set_saving.set(false);
-        });
-    };
 
-    view! {
-        <div class="pb-16 space-y-10">
-            // Formulaire d'ajout
-            <div class="bg-white rounded-2xl shadow-sm border border-cream-200 p-6">
-                <h2 class="font-display text-xl text-cream-900 mb-5">"Ajouter un plat"</h2>
-                <form on:submit=on_add class="space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="form-label">"Nom *"</label>
-                            <input type="text" class="form-input" required
-                                prop:value=name
-                                on:input=move |e| set_name.set(event_target_value(&e))
-                            />
-                        </div>
-                        <div>
-                            <label class="form-label">"Catégorie"</label>
-                            <select class="form-input"
-                                on:change=move |e| set_category.set(event_target_value(&e))
-                            >
-                                <option value="starter">"Entrée"</option>
-                                <option value="main_dish">"Plat principal"</option>
-                                <option value="dessert">"Dessert"</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="form-label">"Description"</label>
-                        <input type="text" class="form-input"
-                            prop:value=description
-                            on:input=move |e| set_description.set(event_target_value(&e))
-                        />
-                    </div>
-                    <div>
-                        <label class="form-label">"Info prix (optionnel)"</label>
-                        <input type="text" class="form-input" placeholder="ex: 8€/pers."
-                            prop:value=price_info
-                            on:input=move |e| set_price_info.set(event_target_value(&e))
-                        />
-                    </div>
-                    {move || form_error.get().map(|msg| view! {
-                        <p class="text-red-600 text-sm">{msg}</p>
-                    })}
-                    <button type="submit" class="btn btn-primary px-6" disabled=move || saving.get()>
-                        {move || if saving.get() { "Ajout..." } else { "Ajouter le plat" }}
-                    </button>
-                </form>
-            </div>
-
-            // Liste des plats
-            <div>
-                <h2 class="font-display text-xl text-cream-900 mb-5">"Carte actuelle"</h2>
-                <Suspense fallback=move || view! {
-                    <div class="flex justify-center py-8">
-                        <div class="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                }>
-                    {move || menu.get().map(|result: Result<crate::models::MenuData, leptos::ServerFnError>| match result {
-                        Err(e) => view! { <p class="text-red-600 text-sm">{format!("{e}")}</p> }.into_view(),
-                        Ok(data) if data.items.is_empty() => view! {
-                            <p class="text-cream-500 text-sm">"Aucun plat dans la carte."</p>
-                        }.into_view(),
-                        Ok(data) => view! {
-                            <div class="space-y-2">
-                                {data.items.into_iter().map(|item| {
-                                    let item_id = item.id.clone();
-                                    let delete_action = create_action(move |id: &String| {
-                                        let id = id.clone();
-                                        async move { delete_menu_item(id).await }
-                                    });
-                                    let _ = create_effect(move |_| {
-                                        if delete_action.value().get().and_then(|r: Result<(), _>| r.ok()).is_some() {
-                                            menu.refetch();
-                                        }
-                                    });
-                                    view! {
-                                        <div class="bg-white rounded-xl border border-cream-200 px-5 py-4 flex items-center justify-between gap-4">
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-2 mb-0.5">
-                                                    <span class="font-medium text-cream-900">{item.name}</span>
-                                                    <span class="tag bg-cream-100 text-cream-600 text-xs">{item.category.label()}</span>
-                                                    {item.price_info.map(|p| view! {
-                                                        <span class="tag bg-primary-100 text-primary-700 text-xs">{p}</span>
-                                                    })}
-                                                </div>
-                                                <p class="text-cream-500 text-sm truncate">{item.description}</p>
-                                            </div>
-                                            <button
-                                                class="text-red-400 hover:text-red-600 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex-shrink-0"
-                                                on:click=move |_| delete_action.dispatch(item_id.clone())
-                                                title="Supprimer"
-                                            >
-                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
-                                            </button>
-                                        </div>
+            div {
+                h2 { class: "font-display text-xl text-ardoise-900 mb-5", "Carte actuelle" }
+                {
+                    let menu_ref = menu_resource.read();
+                    match menu_ref.as_ref().and_then(|o| o.as_ref()) {
+                        None => rsx! {
+                            div { class: "flex justify-center py-8",
+                                div { class: "w-8 h-8 border-4 border-bordeaux-700 border-t-transparent rounded-full animate-spin" }
+                            }
+                        },
+                        Some(data) if data.items.is_empty() => rsx! {
+                            p { class: "text-ardoise-500 text-sm", "Aucun plat dans la carte." }
+                        },
+                        Some(data) => {
+                            let items = data.items.clone();
+                            rsx! {
+                                div { class: "space-y-2",
+                                    for item in items {
+                                        MenuItemRow { item, on_delete: move |id: String| {
+                                            spawn(async move {
+                                                if delete_menu_item(id).await.is_ok() {
+                                                    menu_resource.restart();
+                                                }
+                                            });
+                                        }}
                                     }
-                                }).collect_view()}
-                            </div>
-                        }.into_view(),
-                    })}
-                </Suspense>
-            </div>
-        </div>
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn MenuItemRow(item: MenuItem, on_delete: EventHandler<String>) -> Element {
+    let item_id = item.id.clone();
+    rsx! {
+        div { class: "bg-white rounded-xl border border-creme-200 px-5 py-4 flex items-center justify-between gap-4",
+            div { class: "flex-1 min-w-0",
+                div { class: "flex items-center gap-2 mb-0.5",
+                    span { class: "font-medium text-ardoise-900", "{item.name}" }
+                    span { class: "tag bg-creme-100 text-ardoise-600 text-xs", "{item.category.label()}" }
+                    if let Some(p) = item.price_info {
+                        span { class: "tag bg-safran-100 text-safran-700 text-xs", "{p}" }
+                    }
+                }
+                p { class: "text-ardoise-500 text-sm truncate", "{item.description}" }
+            }
+            button {
+                class: "text-red-400 hover:text-red-600 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex-shrink-0",
+                title: "Supprimer",
+                onclick: move |_| on_delete.call(item_id.clone()),
+                svg { class: "w-4 h-4", fill: "none", view_box: "0 0 24 24", stroke: "currentColor",
+                    path { stroke_linecap: "round", stroke_linejoin: "round", stroke_width: "2", d: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" }
+                }
+            }
+        }
     }
 }
 
 // ── Onglet Marché ─────────────────────────────────────────────────────────────
 
 #[component]
-fn MarketPanel() -> impl IntoView {
-    let market = create_resource(|| (), |_| get_market());
+fn MarketPanel() -> Element {
+    let s3_base = "https://poellebonheur.s3.eu-west-3.amazonaws.com";
 
-    let (date,    set_date)    = create_signal(String::new());
-    let (place,   set_place)   = create_signal(String::new());
-    let (active,  set_active)  = create_signal(false);
-    let (saving,  set_saving)  = create_signal(false);
-    let (saved,   set_saved)   = create_signal(false);
-    let (err_msg, set_err_msg) = create_signal::<Option<String>>(None);
+    let mut date    = use_signal(|| String::new());
+    let mut place   = use_signal(|| String::new());
+    let mut active  = use_signal(|| false);
+    let mut saving  = use_signal(|| false);
+    let mut saved   = use_signal(|| false);
+    let mut err_msg = use_signal(|| Option::<String>::None);
+    let mut loaded  = use_signal(|| false);
 
-    let _ = create_effect(move |_| {
-        if let Some(Ok(m)) = market.get() {
-            set_date.set(m.date.unwrap_or_default());
-            set_place.set(m.place.unwrap_or_default());
-            set_active.set(m.active);
+    let _load = use_resource(move || async move {
+        let url = format!("{s3_base}/data/market.json");
+        if let Ok(resp) = reqwest::get(&url).await {
+            if let Ok(m) = resp.json::<MarketInfo>().await {
+                if !loaded() {
+                    date.set(m.date.unwrap_or_default());
+                    place.set(m.place.unwrap_or_default());
+                    active.set(m.active);
+                    loaded.set(true);
+                }
+            }
         }
     });
 
-    let on_save = move |ev: ev::SubmitEvent| {
-        ev.prevent_default();
-        if saving.get() { return; }
-        set_saving.set(true);
-        set_err_msg.set(None);
-        set_saved.set(false);
-        let info = MarketInfo {
-            date:   if date.get().is_empty() { None } else { Some(date.get()) },
-            place:  if place.get().is_empty() { None } else { Some(place.get()) },
-            active: active.get(),
-        };
-        spawn_local(async move {
-            match update_market(info).await {
-                Ok(_) => {
-                    set_saved.set(true);
-                    market.refetch();
-                }
-                Err(e) => set_err_msg.set(Some(format!("{e}"))),
-            }
-            set_saving.set(false);
-        });
-    };
+    rsx! {
+        div { class: "pb-16 max-w-lg",
+            h2 { class: "font-display text-2xl text-ardoise-900 mb-6", "Prochain marché" }
+            div { class: "bg-white rounded-2xl shadow-sm border border-creme-200 p-6",
+                form {
+                    class: "space-y-5",
+                    onsubmit: move |ev| {
+                        ev.prevent_default();
+                        if saving() { return; }
+                        saving.set(true);
+                        err_msg.set(None);
+                        saved.set(false);
+                        let info = MarketInfo {
+                            date:   if date().is_empty() { None } else { Some(date()) },
+                            place:  if place().is_empty() { None } else { Some(place()) },
+                            active: active(),
+                        };
+                        spawn(async move {
+                            match update_market(info).await {
+                                Ok(_)  => saved.set(true),
+                                Err(e) => err_msg.set(Some(format!("{e}"))),
+                            }
+                            saving.set(false);
+                        });
+                    },
 
-    view! {
-        <div class="pb-16 max-w-lg">
-            <h2 class="font-display text-2xl text-cream-900 mb-6">"Prochain marché"</h2>
-            <div class="bg-white rounded-2xl shadow-sm border border-cream-200 p-6">
-                <form on:submit=on_save class="space-y-5">
-                    <div>
-                        <label class="form-label">"Date"</label>
-                        <input type="text" class="form-input" placeholder="ex: Samedi 5 avril 2025"
-                            prop:value=date
-                            on:input=move |e| set_date.set(event_target_value(&e))
-                        />
-                    </div>
-                    <div>
-                        <label class="form-label">"Lieu"</label>
-                        <input type="text" class="form-input" placeholder="ex: Marché de Montrouge"
-                            prop:value=place
-                            on:input=move |e| set_place.set(event_target_value(&e))
-                        />
-                    </div>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            class="w-5 h-5 rounded accent-primary-600"
-                            prop:checked=active
-                            on:change=move |e| set_active.set(event_target_checked(&e))
-                        />
-                        <span class="text-sm font-medium text-cream-800">"Afficher sur la page d'accueil"</span>
-                    </label>
-                    {move || err_msg.get().map(|msg| view! {
-                        <p class="text-red-600 text-sm">{msg}</p>
-                    })}
-                    {move || saved.get().then(|| view! {
-                        <p class="text-green-600 text-sm">"✓ Enregistré avec succès"</p>
-                    })}
-                    <button type="submit" class="btn btn-primary px-6" disabled=move || saving.get()>
-                        {move || if saving.get() { "Enregistrement..." } else { "Enregistrer" }}
-                    </button>
-                </form>
-            </div>
-        </div>
+                    div {
+                        label { class: "form-label", "Date" }
+                        input { r#type: "text", class: "form-input", placeholder: "ex: Samedi 5 avril 2025",
+                            value: date(), oninput: move |e| date.set(e.value()) }
+                    }
+                    div {
+                        label { class: "form-label", "Lieu" }
+                        input { r#type: "text", class: "form-input", placeholder: "ex: Marché de Montrouge",
+                            value: place(), oninput: move |e| place.set(e.value()) }
+                    }
+                    label { class: "flex items-center gap-3 cursor-pointer",
+                        input {
+                            r#type: "checkbox",
+                            class: "w-5 h-5 rounded accent-bordeaux-700",
+                            checked: active(),
+                            onchange: move |_| active.set(!active())
+                        }
+                        span { class: "text-sm font-medium text-ardoise-800", "Afficher sur la page d'accueil" }
+                    }
+                    if let Some(msg) = err_msg() {
+                        p { class: "text-red-600 text-sm", "{msg}" }
+                    }
+                    if saved() {
+                        p { class: "text-green-600 text-sm", "✓ Enregistré avec succès" }
+                    }
+                    button {
+                        r#type: "submit",
+                        class: "btn btn-safran px-6",
+                        disabled: saving(),
+                        if saving() { "Enregistrement..." } else { "Enregistrer" }
+                    }
+                }
+            }
+        }
     }
 }

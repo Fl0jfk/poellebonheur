@@ -1,0 +1,6 @@
+{
+  "installCommand": "export RUSTUP_HOME=/vercel/.rustup && export CARGO_HOME=/vercel/.cargo && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source /vercel/.cargo/env && rustup target add wasm32-unknown-unknown && cargo install dioxus-cli",
+  "buildCommand": "export RUSTUP_HOME=/vercel/.rustup && export CARGO_HOME=/vercel/.cargo && source /vercel/.cargo/env && npx @tailwindcss/cli -i style/input.css -o public/tailwind.css && dx build --release",
+  "outputDirectory": "dist",
+  "framework": null
+}

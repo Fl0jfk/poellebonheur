@@ -32,7 +32,7 @@ impl MenuCategory {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct MenuItem {
     pub id:          String,
     pub name:        String,
@@ -42,7 +42,7 @@ pub struct MenuItem {
     pub price_info:  Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct CreateMenuItemPayload {
     pub name:       String,
     pub description: String,
@@ -67,7 +67,7 @@ pub enum QuoteStatus {
     Replied,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct QuoteRequest {
     pub id:               String,
     pub last_name:        String,
@@ -100,12 +100,12 @@ pub struct CreateQuotePayload {
     pub message:          Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq)]
 pub struct MenuData {
     pub items: Vec<MenuItem>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq)]
 pub struct QuotesData {
     pub quotes: Vec<QuoteRequest>,
 }
