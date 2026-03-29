@@ -283,8 +283,9 @@ async fn send_devis(payload: &CreateQuotePayload) -> Result<(), String> {
         "message":          payload.message,
     });
 
+    let url = format!("{}/send-devis", crate::config::API_BASE);
     let resp = reqwest::Client::new()
-        .post("/api/send-devis")
+        .post(&url)
         .json(&body)
         .send()
         .await

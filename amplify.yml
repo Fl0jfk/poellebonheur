@@ -1,0 +1,35 @@
+# Build Amplify Hosting — Dioxus WASM + Tailwind → dossier dist/
+# Les variables API_GATEWAY_URL, ADMIN_PASSWORD, ADMIN_API_KEY doivent être
+# définies dans Amplify (Environment variables) : elles sont injectées au build.
+
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Toolchain Rust (même logique que Vercel)
+        - export RUSTUP_HOME="$HOME/.rustup"
+        - export CARGO_HOME="$HOME/.cargo"
+        - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --no-modify-path
+        - export PATH="$HOME/.cargo/bin:$PATH"
+        - rustup target add wasm32-unknown-unknown
+        - cargo install dioxus-cli --version 0.6.3 --locked
+    build:
+      commands:
+        - export PATH="$HOME/.cargo/bin:$PATH"
+        - export RUSTUP_HOME="$HOME/.rustup"
+        - export CARGO_HOME="$HOME/.cargo"
+        # API_GATEWAY_URL, ADMIN_*, etc. : fournis par Amplify
+        - npx --yes @tailwindcss/cli@4 -i style/input.css -o public/tailwind.css
+        - dx build --release --platform web
+        - mkdir -p dist
+        - cp -r target/dx/traiteur-website/release/web/public/. dist/
+  artifacts:
+    baseDirectory: dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - ~/.cargo/registry/**/*
+      - ~/.cargo/git/**/*
+      - target/**/*

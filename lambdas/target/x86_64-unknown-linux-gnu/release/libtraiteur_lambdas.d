@@ -1,0 +1,1 @@
+/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/libtraiteur_lambdas.rlib: /Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/src/lib.rs

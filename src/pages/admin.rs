@@ -542,8 +542,9 @@ fn admin_client() -> reqwest::Client {
 }
 
 async fn api_update_market(info: MarketInfo) -> Result<(), String> {
+    let url = format!("{}/admin/market", crate::config::API_BASE);
     let resp = admin_client()
-        .post("/api/admin/market")
+        .post(&url)
         .json(&info)
         .send()
         .await
@@ -561,8 +562,9 @@ async fn api_create_menu_item(payload: CreateMenuItemPayload) -> Result<(), Stri
         "category":    format!("{:?}", payload.category),
         "price_info":  payload.price_info,
     });
+    let url = format!("{}/admin/menu", crate::config::API_BASE);
     let resp = admin_client()
-        .post("/api/admin/menu")
+        .post(&url)
         .json(&body)
         .send()
         .await
@@ -577,8 +579,9 @@ async fn api_create_menu_item(payload: CreateMenuItemPayload) -> Result<(), Stri
 
 async fn api_delete_menu_item(id: String) -> Result<(), String> {
     let body = serde_json::json!({ "action": "delete", "id": id });
+    let url = format!("{}/admin/menu", crate::config::API_BASE);
     let resp = admin_client()
-        .post("/api/admin/menu")
+        .post(&url)
         .json(&body)
         .send()
         .await
