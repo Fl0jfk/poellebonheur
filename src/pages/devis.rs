@@ -4,13 +4,11 @@ use crate::models::{CreateQuotePayload, MenuCategory, MenuData};
 
 #[component]
 pub fn Devis() -> Element {
-    let s3_base = "https://poellebonheur.s3.eu-west-3.amazonaws.com";
-
+    let s3_base = "https://lapoellebonheur.s3.eu-west-3.amazonaws.com";
     let menu = use_resource(move || async move {
         let url = format!("{s3_base}/data/menu.json");
         reqwest::get(&url).await.ok()?.json::<MenuData>().await.ok()
     });
-
     let mut last_name        = use_signal(|| String::new());
     let mut first_name       = use_signal(|| String::new());
     let mut phone            = use_signal(|| String::new());
@@ -25,13 +23,11 @@ pub fn Devis() -> Element {
     let mut submitting       = use_signal(|| false);
     let mut success          = use_signal(|| false);
     let mut error_msg        = use_signal(|| Option::<String>::None);
-
     rsx! {
         div { class: "min-h-screen flex flex-col",
         Navbar {}
         main { class: "flex-1 pt-24 pb-16",
             div { class: "max-w-3xl mx-auto px-6",
-
                 div { class: "text-center mb-12",
                     span { class: "section-label text-safran-600 block mb-3", "Gratuit & sans engagement" }
                     h1 { class: "font-display text-4xl md:text-5xl text-ardoise-800 mb-4", "Votre devis 🍽️" }
@@ -39,7 +35,6 @@ pub fn Devis() -> Element {
                         "Décrivez votre événement et composez votre menu. On vous répond rapidement avec une proposition personnalisée."
                     }
                 }
-
                 if success() {
                     div { class: "bg-green-50 border border-green-200 rounded-3xl p-10 text-center animate-fade-in",
                         div { class: "text-6xl mb-4", "🥘🎉" }
@@ -84,8 +79,6 @@ pub fn Devis() -> Element {
                                 submitting.set(false);
                             });
                         },
-
-                        // Coordonnées
                         fieldset { class: "space-y-5",
                             legend { class: "font-hand text-2xl font-bold text-ardoise-800 mb-1", "Vos coordonnées" }
                             div { class: "grid grid-cols-1 sm:grid-cols-2 gap-4",
@@ -113,10 +106,7 @@ pub fn Devis() -> Element {
                                 }
                             }
                         }
-
                         hr { class: "border-creme-200" }
-
-                        // Événement
                         fieldset { class: "space-y-5",
                             legend { class: "font-hand text-2xl font-bold text-ardoise-800 mb-1", "Votre événement" }
                             div { class: "grid grid-cols-1 sm:grid-cols-2 gap-4",
@@ -137,10 +127,7 @@ pub fn Devis() -> Element {
                                     value: event_place(), oninput: move |e| event_place.set(e.value()) }
                             }
                         }
-
                         hr { class: "border-creme-200" }
-
-                        // Composition du menu
                         fieldset {
                             legend { class: "font-hand text-2xl font-bold text-ardoise-800 mb-4", "Composition du menu 🥘" }
                             {
@@ -235,10 +222,7 @@ pub fn Devis() -> Element {
                                 }
                             }
                         }
-
                         hr { class: "border-creme-200" }
-
-                        // Message
                         div {
                             label { class: "form-label", "Message complémentaire" }
                             textarea {
@@ -248,11 +232,9 @@ pub fn Devis() -> Element {
                                 oninput: move |e| message.set(e.value())
                             }
                         }
-
                         if let Some(msg) = error_msg() {
                             div { class: "bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm", "{msg}" }
                         }
-
                         button {
                             r#type: "submit",
                             class: "btn btn-safran w-full justify-center text-base py-4 shadow-lg",
@@ -282,7 +264,6 @@ async fn send_devis(payload: &CreateQuotePayload) -> Result<(), String> {
         "desserts":         payload.desserts,
         "message":          payload.message,
     });
-
     let url = format!("{}/send-devis", crate::config::API_BASE);
     let resp = reqwest::Client::new()
         .post(&url)
@@ -290,7 +271,6 @@ async fn send_devis(payload: &CreateQuotePayload) -> Result<(), String> {
         .send()
         .await
         .map_err(|e| format!("Erreur réseau : {e}"))?;
-
     if resp.status().is_success() {
         Ok(())
     } else {

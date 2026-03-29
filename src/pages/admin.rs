@@ -2,10 +2,8 @@ use dioxus::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
 use gloo_storage::{LocalStorage, Storage};
-
 use crate::models::{CreateMenuItemPayload, MarketInfo, MenuCategory, MenuData, MenuItem, QuoteRequest, QuotesData};
 
-// Credentials compilés à la build depuis les variables d'env Vercel
 const ADMIN_PASSWORD: &str = match option_env!("ADMIN_PASSWORD") {
     Some(v) => v,
     None    => "admin",
@@ -15,8 +13,6 @@ const ADMIN_API_KEY: &str = match option_env!("ADMIN_API_KEY") {
     None    => "",
 };
 
-// ── Page admin ────────────────────────────────────────────────────────────────
-
 #[component]
 pub fn Admin() -> Element {
     let mut auth_resource = use_resource(|| async move {
@@ -25,7 +21,6 @@ pub fn Admin() -> Element {
         #[allow(unreachable_code)]
         false
     });
-
     let Some(is_auth) = *auth_resource.read_unchecked() else {
         return rsx! {
             div { class: "min-h-screen flex items-center justify-center",
@@ -33,7 +28,6 @@ pub fn Admin() -> Element {
             }
         };
     };
-
     if !is_auth {
         rsx! {
             LoginForm {
@@ -45,14 +39,11 @@ pub fn Admin() -> Element {
     }
 }
 
-// ── Formulaire de connexion ───────────────────────────────────────────────────
-
 #[component]
 fn LoginForm(on_success: EventHandler<()>) -> Element {
     let mut password = use_signal(|| String::new());
     let mut loading  = use_signal(|| false);
     let mut error    = use_signal(|| Option::<String>::None);
-
     rsx! {
         div { class: "min-h-screen flex items-center justify-center px-4",
             div { class: "bg-white rounded-3xl shadow-xl p-10 w-full max-w-sm",
@@ -106,12 +97,9 @@ fn LoginForm(on_success: EventHandler<()>) -> Element {
     }
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
-
 #[component]
 fn AdminDashboard() -> Element {
     let active_tab: Signal<&'static str> = use_signal(|| "quotes");
-
     rsx! {
         div {
             header { class: "bg-white border-b border-creme-200 sticky top-0 z-30",
@@ -131,14 +119,12 @@ fn AdminDashboard() -> Element {
                     }
                 }
             }
-
             div { class: "max-w-6xl mx-auto px-6 pt-8",
                 div { class: "flex gap-2 mb-8 border-b border-creme-200",
                     TabButton { label: "Devis", id: "quotes", active: active_tab }
                     TabButton { label: "Menu", id: "menu", active: active_tab }
                     TabButton { label: "Marché", id: "market", active: active_tab }
                 }
-
                 match active_tab() {
                     "quotes" => rsx! { QuotesPanel {} },
                     "menu"   => rsx! { MenuPanel {} },
@@ -166,16 +152,13 @@ fn TabButton(label: &'static str, id: &'static str, mut active: Signal<&'static 
     }
 }
 
-// ── Onglet Devis ─────────────────────────────────────────────────────────────
-
 #[component]
 fn QuotesPanel() -> Element {
-    let s3_base = "https://poellebonheur.s3.eu-west-3.amazonaws.com";
+    let s3_base = "https://lapoellebonheur.s3.eu-west-3.amazonaws.com";
     let mut quotes_resource = use_resource(move || async move {
         let url = format!("{s3_base}/data/quotes.json");
         reqwest::get(&url).await.ok()?.json::<QuotesData>().await.ok()
     });
-
     rsx! {
         div { class: "pb-16",
             div { class: "flex items-center justify-between mb-6",
@@ -186,7 +169,6 @@ fn QuotesPanel() -> Element {
                     "Actualiser"
                 }
             }
-
             {
                 let q_ref = quotes_resource.read();
                 match q_ref.as_ref() {
@@ -232,7 +214,6 @@ fn QuoteCard(q: QuoteRequest) -> Element {
     let desserts    = q.desserts.join(", ");
     let full_name   = format!("{} {}", q.first_name, q.last_name);
     let people      = q.number_of_people.to_string();
-
     rsx! {
         div { class: "bg-white rounded-2xl shadow-sm border border-creme-200 p-6",
             div { class: "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4",
@@ -276,23 +257,19 @@ fn QuoteCard(q: QuoteRequest) -> Element {
     }
 }
 
-// ── Onglet Menu ───────────────────────────────────────────────────────────────
-
 #[component]
 fn MenuPanel() -> Element {
-    let s3_base = "https://poellebonheur.s3.eu-west-3.amazonaws.com";
+    let s3_base = "https://lapoellebonheur.s3.eu-west-3.amazonaws.com";
     let mut menu_resource = use_resource(move || async move {
         let url = format!("{s3_base}/data/menu.json");
         reqwest::get(&url).await.ok()?.json::<MenuData>().await.ok()
     });
-
     let mut name        = use_signal(|| String::new());
     let mut description = use_signal(|| String::new());
     let mut category    = use_signal(|| "starter".to_string());
     let mut price_info  = use_signal(|| String::new());
     let mut form_error  = use_signal(|| Option::<String>::None);
     let mut saving      = use_signal(|| false);
-
     rsx! {
         div { class: "pb-16 space-y-10",
             div { class: "bg-white rounded-2xl shadow-sm border border-creme-200 p-6",
@@ -371,7 +348,6 @@ fn MenuPanel() -> Element {
                     }
                 }
             }
-
             div {
                 h2 { class: "font-display text-xl text-ardoise-900 mb-5", "Carte actuelle" }
                 {
@@ -435,12 +411,9 @@ fn MenuItemRow(item: MenuItem, on_delete: EventHandler<String>) -> Element {
     }
 }
 
-// ── Onglet Marché ─────────────────────────────────────────────────────────────
-
 #[component]
 fn MarketPanel() -> Element {
-    let s3_base = "https://poellebonheur.s3.eu-west-3.amazonaws.com";
-
+    let s3_base = "https://lapoellebonheur.s3.eu-west-3.amazonaws.com";
     let mut date    = use_signal(|| String::new());
     let mut place   = use_signal(|| String::new());
     let mut active  = use_signal(|| false);
@@ -448,7 +421,6 @@ fn MarketPanel() -> Element {
     let mut saved   = use_signal(|| false);
     let mut err_msg = use_signal(|| Option::<String>::None);
     let mut loaded  = use_signal(|| false);
-
     let _load = use_resource(move || async move {
         let url = format!("{s3_base}/data/market.json");
         if let Ok(resp) = reqwest::get(&url).await {
@@ -462,7 +434,6 @@ fn MarketPanel() -> Element {
             }
         }
     });
-
     rsx! {
         div { class: "pb-16 max-w-lg",
             h2 { class: "font-display text-2xl text-ardoise-900 mb-6", "Prochain marché" }
@@ -526,8 +497,6 @@ fn MarketPanel() -> Element {
     }
 }
 
-// ── Appels aux Vercel Functions ───────────────────────────────────────────────
-
 fn admin_client() -> reqwest::Client {
     let mut headers = reqwest::header::HeaderMap::new();
     if !ADMIN_API_KEY.is_empty() {
@@ -540,7 +509,6 @@ fn admin_client() -> reqwest::Client {
         .build()
         .unwrap_or_default()
 }
-
 async fn api_update_market(info: MarketInfo) -> Result<(), String> {
     let url = format!("{}/admin/market", crate::config::API_BASE);
     let resp = admin_client()
@@ -553,7 +521,6 @@ async fn api_update_market(info: MarketInfo) -> Result<(), String> {
     if resp.status().is_success() { Ok(()) }
     else { Err(format!("Erreur {}", resp.status())) }
 }
-
 async fn api_create_menu_item(payload: CreateMenuItemPayload) -> Result<(), String> {
     let body = serde_json::json!({
         "action":      "create",
@@ -569,14 +536,12 @@ async fn api_create_menu_item(payload: CreateMenuItemPayload) -> Result<(), Stri
         .send()
         .await
         .map_err(|e| format!("Erreur réseau : {e}"))?;
-
     if resp.status().is_success() { Ok(()) }
     else {
         let msg = resp.text().await.unwrap_or_else(|_| "Erreur serveur".into());
         Err(msg)
     }
 }
-
 async fn api_delete_menu_item(id: String) -> Result<(), String> {
     let body = serde_json::json!({ "action": "delete", "id": id });
     let url = format!("{}/admin/menu", crate::config::API_BASE);
@@ -586,7 +551,6 @@ async fn api_delete_menu_item(id: String) -> Result<(), String> {
         .send()
         .await
         .map_err(|e| format!("Erreur réseau : {e}"))?;
-
     if resp.status().is_success() { Ok(()) }
     else { Err(format!("Erreur {}", resp.status())) }
 }

@@ -1,6 +1,8 @@
 [application]
 name = "traiteur-website"
 default-platform = "fullstack"
+# Dossier des fichiers statiques (copiés / hot-reload). Sans ça, dx ne sait pas où prendre public/.
+asset_dir = "public"
 
 [web.watcher]
 reload_html = true

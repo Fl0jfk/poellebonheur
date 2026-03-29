@@ -7,23 +7,39 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Toolchain Rust (même logique que Vercel)
-        - export RUSTUP_HOME="$HOME/.rustup"
-        - export CARGO_HOME="$HOME/.cargo"
-        - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --no-modify-path
-        - export PATH="$HOME/.cargo/bin:$PATH"
-        - rustup target add wasm32-unknown-unknown
-        - cargo install dioxus-cli --version 0.6.3 --locked
+        - |
+          set -euo pipefail
+          export RUSTUP_HOME="$HOME/.rustup"
+          export CARGO_HOME="$HOME/.cargo"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --no-modify-path
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rustup target add wasm32-unknown-unknown
+          cargo install dioxus-cli --version 0.6.3 --locked
     build:
       commands:
-        - export PATH="$HOME/.cargo/bin:$PATH"
-        - export RUSTUP_HOME="$HOME/.rustup"
-        - export CARGO_HOME="$HOME/.cargo"
-        # API_GATEWAY_URL, ADMIN_*, etc. : fournis par Amplify
-        - npx --yes @tailwindcss/cli@4 -i style/input.css -o public/tailwind.css
-        - dx build --release --platform web
-        - mkdir -p dist
-        - cp -r target/dx/traiteur-website/release/web/public/. dist/
+        # Un seul bloc shell : Amplify exécute chaque entrée de la liste dans un shell neuf,
+        # donc variables et cd ne survivent pas d’une ligne à l’autre.
+        - |
+          set -euo pipefail
+          export PATH="$HOME/.cargo/bin:$PATH"
+          export RUSTUP_HOME="$HOME/.rustup"
+          export CARGO_HOME="$HOME/.cargo"
+          dx build --release --platform web
+          PUBLIC_DIR="$(find target/dx -type d -path '*/release/web/public' | head -n 1)"
+          test -n "$PUBLIC_DIR"
+          # Dioxus 0.6 traite .avif via son pipeline image (ré-encodage) : fichier parfois corrompu
+          # → on réécrit les médias bruts depuis public/ par-dessus la sortie du build.
+          shopt -s nullglob
+          for f in public/*.avif public/*.png public/*.jpg public/*.jpeg public/*.webp; do
+            if [ -f "$f" ]; then cp -f "$f" "$PUBLIC_DIR/"; fi
+          done
+          shopt -u nullglob
+          if [ -d public/fonts ]; then cp -Rf public/fonts "$PUBLIC_DIR/"; fi
+          npx --yes @tailwindcss/cli@4 -i style/input.css -o "$PUBLIC_DIR/tailwind.css"
+          ls -la "$PUBLIC_DIR"
+          test -f "$PUBLIC_DIR/tailwind.css"
+          mkdir -p dist
+          cp -r "$PUBLIC_DIR/." dist/
   artifacts:
     baseDirectory: dist
     files:

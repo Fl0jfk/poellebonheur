@@ -3,8 +3,6 @@ use crate::app::Route;
 use crate::components::{footer::Footer, navbar::Navbar};
 use crate::models::{MarketInfo, MenuCategory, MenuData};
 
-// ── Pêle-mêle photos ─────────────────────────────────────────────────────────
-
 #[component]
 fn PhotoCollage() -> Element {
     rsx! {
@@ -16,47 +14,39 @@ fn PhotoCollage() -> Element {
             input { r#type: "radio", name: "collage", id: "cp4" }
 
             label { r#for: "cp0", class: "collage-photo collage-p0",
-                img { src: "/Plat1.jpg", alt: "Paella géante", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
+                img { src: "/Plat1.avif", alt: "Paella géante", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
             }
             label { r#for: "cp1", class: "collage-photo collage-p1",
-                img { src: "/Entree1.jpg", alt: "Fruits de mer", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
+                img { src: "/Entree1.avif", alt: "Fruits de mer", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
             }
             label { r#for: "cp2", class: "collage-photo collage-p2",
-                img { src: "/Dessert1.jpg", alt: "Desserts maison", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
+                img { src: "/Dessert1.avif", alt: "Desserts maison", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
             }
             label { r#for: "cp3", class: "collage-photo collage-p3",
-                img { src: "/Repas2.jpg", alt: "Repas convivial", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
+                img { src: "/Repas2.avif", alt: "Repas convivial", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
             }
             label { r#for: "cp4", class: "collage-photo collage-p4",
-                img { src: "/Repas3.jpg", alt: "Repas festif", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
+                img { src: "/Repas3.avif", alt: "Repas festif", style: "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;" }
             }
         }
     }
 }
 
-// ── Page d'accueil ───────────────────────────────────────────────────────────
-
 #[component]
 pub fn Home() -> Element {
-    let s3_base = "https://poellebonheur.s3.eu-west-3.amazonaws.com";
-
+    let s3_base = "https://lapoellebonheur.s3.eu-west-3.amazonaws.com";
     let market = use_resource(move || async move {
         let url = format!("{s3_base}/data/market.json");
         reqwest::get(&url).await.ok()?.json::<MarketInfo>().await.ok()
     });
-
     let menu = use_resource(move || async move {
         let url = format!("{s3_base}/data/menu.json");
         reqwest::get(&url).await.ok()?.json::<MenuData>().await.ok()
     });
-
     rsx! {
         div { class: "min-h-screen flex flex-col",
         Navbar {}
-        // ── Hero ──────────────────────────────────────────────────────────
         section { class: "relative min-h-screen flex items-center justify-center pt-16",
-
-            // Fond décoratif (layer séparé)
             div { class: "absolute inset-0 overflow-hidden",
                 div { class: "absolute inset-0 bg-gradient-to-br from-ardoise-700 via-ardoise-800 to-ardoise-900" }
                 div {
@@ -66,12 +56,10 @@ pub fn Home() -> Element {
                 div { class: "absolute top-20 left-10 w-72 h-72 bg-bordeaux-700/20 rounded-full blur-3xl" }
                 div { class: "absolute bottom-20 right-10 w-96 h-96 bg-safran-500/15 rounded-full blur-3xl" }
             }
-
             div { class: "relative z-10 text-center w-full max-w-4xl mx-auto",
                 div { class: "flex justify-center mb-8 sm:mb-12",
                     PhotoCollage {}
                 }
-
                 div { class: "px-6",
                     h1 { class: "font-display text-5xl md:text-7xl text-white mb-4 drop-shadow-lg",
                         "La Poêlée"
@@ -88,15 +76,12 @@ pub fn Home() -> Element {
                     }
                 }
             }
-
             div { class: "absolute bottom-8 xl:bottom-4 left-1/2 -translate-x-1/2 animate-bounce",
                 svg { class: "w-6 h-6 text-white/40", fill: "none", view_box: "0 0 24 24", stroke: "currentColor",
                     path { stroke_linecap: "round", stroke_linejoin: "round", stroke_width: "2", d: "M19 9l-7 7-7-7" }
                 }
             }
         }
-
-        // ── Bandeau marché ────────────────────────────────────────────────
         {
             let market_ref = market.read();
             if let Some(Some(m)) = market_ref.as_ref() {
@@ -118,8 +103,6 @@ pub fn Home() -> Element {
                 } else { rsx! {} }
             } else { rsx! {} }
         }
-
-        // ── Chiffres clés ─────────────────────────────────────────────────
         section { class: "py-16 bg-bordeaux-700 text-white",
             div { class: "max-w-5xl mx-auto px-6",
                 div { class: "grid grid-cols-2 md:grid-cols-4 gap-8 text-center",
@@ -142,8 +125,6 @@ pub fn Home() -> Element {
                 }
             }
         }
-
-        // ── À propos ──────────────────────────────────────────────────────
         section { id: "about", class: "py-24 bg-creme-50",
             div { class: "max-w-6xl mx-auto px-6",
                 div { class: "grid grid-cols-1 md:grid-cols-2 gap-16 items-center",
@@ -163,7 +144,6 @@ pub fn Home() -> Element {
                             }
                         }
                     }
-
                     div {
                         span { class: "section-label text-safran-600 block mb-3", "Qui sommes-nous ?" }
                         h2 { class: "section-title text-ardoise-800 mb-6 leading-tight",
@@ -188,8 +168,6 @@ pub fn Home() -> Element {
                 }
             }
         }
-
-        // ── Menu ──────────────────────────────────────────────────────────
         section { id: "menu", class: "py-24 bg-white",
             div { class: "max-w-6xl mx-auto px-6",
                 div { class: "text-center mb-14",
@@ -202,7 +180,6 @@ pub fn Home() -> Element {
                         "Chaque plat est préparé le jour même avec des ingrédients frais et de saison."
                     }
                 }
-
                 {
                     let menu_ref = menu.read();
                     match menu_ref.as_ref() {
@@ -265,14 +242,11 @@ pub fn Home() -> Element {
                         }
                     }
                 }
-
                 div { class: "text-center mt-14",
                     Link { to: Route::Devis {}, class: "btn btn-primary text-base px-10 py-4", "🍽️ Composer mon menu sur mesure" }
                 }
             }
         }
-
-        // ── CTA final ─────────────────────────────────────────────────────
         section { class: "py-24 bg-gradient-to-br from-ardoise-800 to-ardoise-900 text-white text-center relative overflow-hidden",
             div {
                 class: "absolute inset-0 opacity-10",
@@ -297,6 +271,6 @@ pub fn Home() -> Element {
             }
         }
         Footer {}
-        } // end flex col
+        }
     }
 }
