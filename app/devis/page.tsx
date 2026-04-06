@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Footer } from "@/app/components/Footer";
 import { Navbar } from "@/app/components/Navbar";
 
@@ -13,9 +14,7 @@ type MenuItem = {
 };
 type MenuData = { items: MenuItem[] };
 
-function menuJsonUrl() {
-  return "/api/public/menu";
-}
+function menuJsonUrl() {return "/api/public/menu";}
 
 function normalizeMenuCategory(raw: string): "starter" | "main_dish" | "dessert" {
   const lower = raw.trim().toLowerCase().replace(/-/g, "_");
@@ -60,20 +59,31 @@ function PickTile({
     <button
       type="button"
       onClick={onPick}
-      className={`cursor-pointer overflow-hidden rounded-xl bg-white text-left shadow-sm ${frame}`}
+      className={`flex h-full w-full min-w-0 flex-col overflow-hidden rounded-xl bg-white text-left shadow-sm transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bordeaux-500 focus-visible:ring-offset-2 ${frame}`}
     >
-      {item.photo_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.photo_url} alt={item.name} className="h-24 w-full object-cover" />
-      ) : (
-        <div className="flex h-20 w-full items-center justify-center bg-creme-100 text-2xl text-ardoise-300">
-          🍽️
-        </div>
-      )}
-      <div className="p-3">
-        <p className="text-sm font-medium text-ardoise-800">{item.name}</p>
-        {item.description ? (
-          <p className="mt-0.5 line-clamp-2 text-xs text-ardoise-500">{item.description}</p>
+      <div className="relative aspect-[5/3] w-full shrink-0 bg-gradient-to-br from-creme-100 to-creme-200">
+        {item.photo_url ? (
+          <Image
+            src={item.photo_url}
+            alt={item.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 45vw, 200px"
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center text-2xl text-ardoise-300" aria-hidden>
+            🍽️
+          </span>
+        )}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-1 p-2.5 sm:p-3">
+        <span className="font-body text-xs font-semibold leading-snug text-ardoise-800 sm:text-sm">
+          {item.name}
+        </span>
+        {item.description?.trim() ? (
+          <span className="line-clamp-3 font-body text-[11px] leading-snug text-ardoise-500 sm:text-xs">
+            {item.description}
+          </span>
         ) : null}
       </div>
     </button>
@@ -147,15 +157,10 @@ export default function DevisPage() {
     }
     setSubmitting(false);
   }
-
   const data = menu;
-  const starterItems =
-    data?.items.filter((i) => normalizeMenuCategory(i.category) === "starter") ?? [];
-  const mainItems =
-    data?.items.filter((i) => normalizeMenuCategory(i.category) === "main_dish") ?? [];
-  const dessertItems =
-    data?.items.filter((i) => normalizeMenuCategory(i.category) === "dessert") ?? [];
-
+  const starterItems = data?.items.filter((i) => normalizeMenuCategory(i.category) === "starter") ?? [];
+  const mainItems = data?.items.filter((i) => normalizeMenuCategory(i.category) === "main_dish") ?? [];
+  const dessertItems = data?.items.filter((i) => normalizeMenuCategory(i.category) === "dessert") ?? [];
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -164,12 +169,8 @@ export default function DevisPage() {
           <div className="mb-12 text-center">
             <span className="section-label mb-3 block text-safran-600">Gratuit & sans engagement</span>
             <h1 className="mb-4 font-display text-4xl text-ardoise-800 md:text-5xl">Votre devis 🍽️</h1>
-            <p className="mx-auto max-w-xl font-body text-ardoise-500">
-              Décrivez votre événement et composez votre menu. On vous répond rapidement avec une
-              proposition personnalisée.
-            </p>
+            <p className="mx-auto max-w-xl font-body text-ardoise-500">Décrivez votre événement et composez votre menu. On vous répond rapidement avec une proposition personnalisée.</p>
           </div>
-
           {success ? (
             <div className="animate-fade-in rounded-3xl border border-green-200 bg-green-50 p-10 text-center">
               <div className="mb-4 text-6xl">🥘🎉</div>
@@ -177,10 +178,7 @@ export default function DevisPage() {
               <p className="font-body text-green-700">On vous recontacte dans les plus brefs délais.</p>
             </div>
           ) : (
-            <form
-              onSubmit={onSubmit}
-              className="space-y-8 rounded-3xl bg-white p-8 shadow-lg"
-            >
+            <form onSubmit={onSubmit} className="space-y-8 rounded-3xl bg-white p-8 shadow-lg">
               <fieldset className="space-y-5">
                 <legend className="mb-1 font-hand text-2xl font-bold text-ardoise-800">
                   Vos coordonnées
@@ -215,7 +213,7 @@ export default function DevisPage() {
                       type="tel"
                       value={phone}
                       required
-                      
+
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="06 00 00 00 00"
                     />
@@ -235,9 +233,7 @@ export default function DevisPage() {
               </fieldset>
               <hr className="border-creme-200" />
               <fieldset className="space-y-5">
-                <legend className="mb-1 font-hand text-2xl font-bold text-ardoise-800">
-                  Votre événement
-                </legend>
+                <legend className="mb-1 font-hand text-2xl font-bold text-ardoise-800">Votre événement</legend>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="form-label">Date de l&apos;événement</label>
@@ -374,10 +370,7 @@ export default function DevisPage() {
         <div className="mx-auto max-w-3xl px-6 text-center">
           <p className="font-hand text-xl font-bold text-ardoise-700">Une question avant de réserver ?</p>
           <p className="mt-1 text-sm text-ardoise-500">Appelez-nous directement, on vous conseille avec plaisir.</p>
-          <a
-            href="tel:0745852654"
-            className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border-2 border-bordeaux-600 bg-bordeaux-700 px-8 py-3.5 font-body text-base font-semibold text-white shadow-md transition-colors hover:bg-bordeaux-800"
-          >
+          <a href="tel:0745852654" className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border-2 border-bordeaux-600 bg-bordeaux-700 px-8 py-3.5 font-body text-base font-semibold text-white shadow-md transition-colors hover:bg-bordeaux-800">
             📞 07.45.85.26.54
           </a>
         </div>

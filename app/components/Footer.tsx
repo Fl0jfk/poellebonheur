@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
   return (
@@ -8,13 +9,11 @@ export function Footer() {
           <div className="flex flex-col items-start gap-4">
             <div className="flex items-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/Logo.png"
                 alt="La Poêlée du Bonheur"
-                className="h-[90px] w-auto"
-                onError={(e) => {
-                  e.currentTarget.src = "/logo.png";
-                }}
+                width={90}
+                height={90}
               />
               <p className="font-display text-2xl leading-tight text-white">
                 La Poêlée

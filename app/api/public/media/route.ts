@@ -4,12 +4,9 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const region = process.env.AWS_REGION || "eu-west-3";
-const bucket = process.env.S3_BUCKET_NAME;
-if (!bucket) {
-  throw new Error("S3_BUCKET_NAME est requis.");
-}
-
+const region = process.env.REGION;
+const bucket = process.env.BUCKET_NAME;
+if (!bucket) {throw new Error("S3_BUCKET_NAME est requis.")}
 const s3 = new S3Client({ region });
 
 function safeUploadsKey(raw: string | null): string | null {
@@ -26,17 +23,12 @@ function safeUploadsKey(raw: string | null): string | null {
   return key;
 }
 
-/**
- * Sert les images uploadées sur S3 (bucket souvent privé) via le serveur Next.
- * URL stockée en JSON : /api/public/media?key=uploads%2Fxxx.webp
- */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const key = safeUploadsKey(searchParams.get("key"));
   if (!key) {
     return new NextResponse("Not found", { status: 404 });
   }
-
   try {
     const obj = await s3.send(
       new GetObjectCommand({

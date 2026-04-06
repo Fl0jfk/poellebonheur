@@ -4,10 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
 
-type NavbarProps = {
-  /** Bandeau au-dessus de la barre (ex. annonces marché), inclus dans le bloc fixe pour ne pas passer sous le header */
-  announcement?: ReactNode;
-};
+type NavbarProps = { announcement?: ReactNode};
 
 export function Navbar({ announcement }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -112,7 +109,6 @@ export function Navbar({ announcement }: NavbarProps) {
           </div>
         </div>
       </div>
-
       <div
         id="nav-mobile"
         className={`fixed inset-0 z-10 box-border flex max-h-[100dvh] min-h-full flex-col overflow-y-auto bg-white transition-all duration-200 ease-out md:hidden ${

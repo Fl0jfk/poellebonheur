@@ -5,8 +5,8 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const region = process.env.AWS_REGION || "eu-west-3";
-const bucket = process.env.S3_BUCKET_NAME;
+const region = process.env.REGION;
+const bucket = process.env.BUCKET_NAME;
 if (!bucket) {
   throw new Error("S3_BUCKET_NAME est requis.");
 }
@@ -53,7 +53,7 @@ function menuWithRewrittenPhotos(data: MenuData): MenuData {
 }
 
 function isAdminAuthorized(req: Request): boolean {
-  const expected = process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY || "";
+  const expected = process.env.ADMIN_API_KEY || "";
   if (!expected) return true;
   return req.headers.get("x-admin-key") === expected;
 }

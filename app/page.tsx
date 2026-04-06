@@ -97,7 +97,6 @@ export default function HomePage() {
         ) : null}
       </div>
     ) : null;
-
   useEffect(() => {
     let ok = true;
     (async () => {
@@ -115,7 +114,6 @@ export default function HomePage() {
       ok = false;
     };
   }, []);
-
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar announcement={marketAnnouncement} />
@@ -163,14 +161,13 @@ export default function HomePage() {
               <Link href="/devis" className="btn btn-safran px-10 py-4 text-base shadow-lg">
                 🍽️ Demander un devis
               </Link>
-              <a href="#menu" className="btn btn-ghost px-8 py-4 text-base">
+              <Link href="#menu" className="btn btn-ghost px-8 py-4 text-base">
                 Voir notre carte
-              </a>
+              </Link>
             </div>
           </div>
         </div>
       </section>
-
       <section className="bg-bordeaux-700 py-16 text-white">
         <div className="mx-auto max-w-5xl px-6">
           <div className="grid grid-cols-2 gap-8 text-center md:grid-cols-4">
@@ -194,7 +191,6 @@ export default function HomePage() {
           <div className="grid grid-cols-1 items-center gap-16 md:grid-cols-2">
             <div className="relative flex justify-center">
               <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <Image
                   src="/Logo.png"
                   alt="La Poêlée du Bonheur"
@@ -236,7 +232,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section id="menu" className="bg-white py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-14 text-center">
@@ -248,7 +243,6 @@ export default function HomePage() {
               Chaque plat est préparé le jour même avec des ingrédients frais et de saison.
             </p>
           </div>
-
           {menu === undefined ? (
             <div className="flex justify-center py-16">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-bordeaux-700 border-t-transparent" />
@@ -285,15 +279,12 @@ export default function HomePage() {
                           className="card overflow-hidden border border-creme-100"
                         >
                           {item.photo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.photo_url}
-                              alt={item.name}
-                              className="h-48 w-full object-cover"
-                            />
+                            <div className="relative h-48 w-full">
+                              <Image src={item.photo_url} alt={item.name} fill className="object-cover"/>
+                            </div>
                           ) : (
                             <div className="flex h-48 w-full items-center justify-center bg-creme-100 text-5xl text-ardoise-300">
-                              🍽️
+                             🍽️
                             </div>
                           )}
                           <div className="p-5">
@@ -350,7 +341,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <Footer />
     </div>
   );

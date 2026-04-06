@@ -5,8 +5,8 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const region = process.env.AWS_REGION || "eu-west-3";
-const bucket = process.env.S3_BUCKET_NAME;
+const region = process.env.REGION;
+const bucket = process.env.BUCKET_NAME;
 if (!bucket) {
   throw new Error("S3_BUCKET_NAME est requis.");
 }
@@ -18,7 +18,7 @@ type CollagePhoto = { id: string; src: string; alt: string };
 type CollageData = { photos: CollagePhoto[] };
 
 function isAdminAuthorized(req: Request): boolean {
-  const expected = process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY || "";
+  const expected = process.env.ADMIN_API_KEY;
   if (!expected) return true;
   return req.headers.get("x-admin-key") === expected;
 }
@@ -153,17 +153,12 @@ export async function POST(req: Request) {
       return true;
     });
     if (invalid.length > 0) {
-      return NextResponse.json(
-        {
-          error:
-            "Chaque photo doit être stockée sur S3 (upload fichier). Les chemins /fichier.jpg ou URLs externes non S3 ne sont pas acceptés.",
-        },
+      return NextResponse.json({ error:"Chaque photo doit être stockée sur S3 (upload fichier). Les chemins /fichier.jpg ou URLs externes non S3 ne sont pas acceptés."},
         { status: 400 },
       );
     }
     await saveCollage({ photos });
     return NextResponse.json({ ok: true });
   }
-
   return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
 }

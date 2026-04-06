@@ -10,9 +10,7 @@
     "eslint-visitor-keys": "4.2.0"
   },
   "scripts": {
-    "clean": "node scripts/clean-next.js",
-    "dev": "node scripts/clean-next.js && next dev",
-    "dev:watch": "next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

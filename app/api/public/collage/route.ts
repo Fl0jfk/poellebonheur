@@ -5,15 +5,11 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const region = process.env.AWS_REGION || "eu-west-3";
-const bucket = process.env.S3_BUCKET_NAME;
-if (!bucket) {
-  throw new Error("S3_BUCKET_NAME est requis.");
-}
-
+const region = process.env.REGION;
+const bucket = process.env.BUCKET_NAME;
+if (!bucket) { throw new Error("S3_BUCKET_NAME est requis.")}
 const s3 = new S3Client({ region });
 const KEY = "data/collage.json";
-
 type CollagePhoto = { id: string; src: string; alt: string };
 type CollageData = { photos: CollagePhoto[] };
 
@@ -34,14 +30,7 @@ function rewriteUploadSrc(url: string): string {
   }
   return t;
 }
-
-async function signedGet(key: string) {
-  return getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
-    { expiresIn: 60 },
-  );
-}
+async function signedGet(key: string) { return getSignedUrl( s3, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: 60 })}
 
 async function loadCollage(): Promise<CollageData> {
   const url = await signedGet(KEY);

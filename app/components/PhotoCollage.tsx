@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 type CollagePhoto = { id: string; src: string; alt: string };
 
@@ -9,7 +10,6 @@ type PhotoCollageProps = {hasMarketBanner?: boolean};
 export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
   const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState<CollagePhoto[]>([]);
-
   useEffect(() => {
     let ok = true;
     (async () => {
@@ -74,8 +74,7 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
           const cls = i === active ? "collage-card active" : i === near.prev ? "collage-card prev" : i === near.next ? "collage-card next" : "collage-card hidden-card";
           return (
             <button key={p.id} type="button" className={cls} onClick={() => setActive(i)} aria-label={p.alt}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.src} alt={p.alt} className="h-full w-full object-cover" />
+              <Image src={p.src} alt={p.alt} fill className="h-full w-full object-cover" />
             </button>
           );
         })}

@@ -5,15 +5,11 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const region = process.env.AWS_REGION || "eu-west-3";
-const bucket = process.env.S3_BUCKET_NAME;
-if (!bucket) {
-  throw new Error("S3_BUCKET_NAME est requis.");
-}
-
+const region = process.env.REGION;
+const bucket = process.env.BUCKET_NAME;
+if (!bucket) { throw new Error("S3_BUCKET_NAME est requis.");}
 const s3 = new S3Client({ region });
 const KEY = "data/market.json";
-
 type MarketEntry = { id: string; date: string; place: string };
 type MarketsData = { markets: MarketEntry[] };
 type LegacyMarket = { date?: string | null; place?: string | null; active?: boolean };
