@@ -46,7 +46,7 @@ pub fn Home() -> Element {
     rsx! {
         div { class: "min-h-screen flex flex-col",
         Navbar {}
-        section { class: "relative min-h-screen flex items-center justify-center pt-16",
+        section { class: "relative min-h-screen flex items-center justify-center sm:pt-28 md:pt-28 lg:pt-32",
             div { class: "absolute inset-0 overflow-hidden",
                 div { class: "absolute inset-0 bg-gradient-to-br from-ardoise-700 via-ardoise-800 to-ardoise-900" }
                 div {
@@ -57,7 +57,7 @@ pub fn Home() -> Element {
                 div { class: "absolute bottom-20 right-10 w-96 h-96 bg-safran-500/15 rounded-full blur-3xl" }
             }
             div { class: "relative z-10 text-center w-full max-w-4xl mx-auto",
-                div { class: "flex justify-center mb-8 sm:mb-12",
+                div { class: "flex justify-center mb-4",
                     PhotoCollage {}
                 }
                 div { class: "px-6",
@@ -67,18 +67,13 @@ pub fn Home() -> Element {
                         span { class: "text-safran-400", "du Bonheur" }
                     }
                     p { class: "font-hand text-2xl text-ardoise-300 mb-3", "Traiteur événementielle" }
-                    p { class: "font-body text-ardoise-300 text-lg max-w-2xl mx-auto mb-10 leading-relaxed",
+                    p { class: "font-body text-ardoise-300 text-lg max-w-2xl mx-auto mb-8 leading-relaxed",
                         "Paella géante, fruits de mer et saveurs méditerranéennes cuisinés avec passion pour vos mariages, anniversaires et marchés. 🦐🥘"
                     }
                     div { class: "flex flex-col sm:flex-row gap-4 justify-center items-center",
                         Link { to: Route::Devis {}, class: "btn btn-safran text-base px-10 py-4 shadow-lg", "🍽️ Demander un devis" }
                         a { href: "#menu", class: "btn btn-ghost text-base px-8 py-4", "Voir notre carte" }
                     }
-                }
-            }
-            div { class: "absolute bottom-8 xl:bottom-4 left-1/2 -translate-x-1/2 animate-bounce",
-                svg { class: "w-6 h-6 text-white/40", fill: "none", view_box: "0 0 24 24", stroke: "currentColor",
-                    path { stroke_linecap: "round", stroke_linejoin: "round", stroke_width: "2", d: "M19 9l-7 7-7-7" }
                 }
             }
         }
