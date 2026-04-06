@@ -1,25 +1,16 @@
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
+import { getStorage, storageConfigErrorJson, type StorageContext } from "@/lib/storage-env";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-const region = process.env.REGION;
-const bucket = process.env.BUCKET_NAME;
-if (!bucket) { throw new Error("S3_BUCKET_NAME est requis.");}
-const s3 = new S3Client({ region });
 const KEY = "data/market.json";
+
 type MarketEntry = { id: string; date: string; place: string };
 type MarketsData = { markets: MarketEntry[] };
 type LegacyMarket = { date?: string | null; place?: string | null; active?: boolean };
 
-async function signedGet(key: string) {
-  return getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
-    { expiresIn: 60 },
-  );
+async function signedGet(st: StorageContext, key: string) {
+  return getSignedUrl(st.s3, new GetObjectCommand({ Bucket: st.bucket, Key: key }), { expiresIn: 60 });
 }
 
 function normalizeMarketsData(raw: unknown): MarketsData {
@@ -51,8 +42,8 @@ function normalizeMarketsData(raw: unknown): MarketsData {
   return { markets: [] };
 }
 
-async function loadMarket(): Promise<MarketsData> {
-  const url = await signedGet(KEY);
+async function loadMarket(st: StorageContext): Promise<MarketsData> {
+  const url = await signedGet(st, KEY);
   const res = await fetch(url, { cache: "no-store" });
   if (res.status === 404 || !res.ok) return { markets: [] };
   try {
@@ -64,6 +55,10 @@ async function loadMarket(): Promise<MarketsData> {
 }
 
 export async function GET() {
-  const market = await loadMarket();
+  const st = getStorage();
+  if (!st) {
+    return NextResponse.json(storageConfigErrorJson(), { status: 503 });
+  }
+  const market = await loadMarket(st);
   return NextResponse.json(market);
 }

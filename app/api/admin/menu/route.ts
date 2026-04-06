@@ -1,17 +1,8 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
+import { getStorage, storageConfigErrorJson, type StorageContext } from "@/lib/storage-env";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-const region = process.env.REGION;
-const bucket = process.env.BUCKET_NAME;
-if (!bucket) {
-  throw new Error("S3_BUCKET_NAME est requis.");
-}
-
-const s3 = new S3Client({ region });
 const KEY = "data/menu.json";
 
 type MenuItem = {
@@ -24,7 +15,11 @@ type MenuItem = {
 };
 type MenuData = { items: MenuItem[] };
 
-function rewriteUploadPhotoUrl(photoUrl: string | null | undefined): string | null {
+function rewriteUploadPhotoUrl(
+  photoUrl: string | null | undefined,
+  bucket: string,
+  region: string,
+): string | null {
   if (photoUrl == null || !String(photoUrl).trim()) return null;
   const u = String(photoUrl).trim();
   if (u.startsWith("/api/public/media")) return u;
@@ -43,11 +38,11 @@ function rewriteUploadPhotoUrl(photoUrl: string | null | undefined): string | nu
   return u;
 }
 
-function menuWithRewrittenPhotos(data: MenuData): MenuData {
+function menuWithRewrittenPhotos(data: MenuData, st: StorageContext): MenuData {
   return {
     items: (data.items || []).map((it) => ({
       ...it,
-      photo_url: rewriteUploadPhotoUrl(it.photo_url),
+      photo_url: rewriteUploadPhotoUrl(it.photo_url, st.bucket, st.region),
     })),
   };
 }
@@ -58,18 +53,14 @@ function isAdminAuthorized(req: Request): boolean {
   return req.headers.get("x-admin-key") === expected;
 }
 
-async function signedGet(key: string) {
-  return getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
-    { expiresIn: 60 },
-  );
+async function signedGet(st: StorageContext, key: string) {
+  return getSignedUrl(st.s3, new GetObjectCommand({ Bucket: st.bucket, Key: key }), { expiresIn: 60 });
 }
 
-async function signedPut(key: string, contentType: string) {
+async function signedPut(st: StorageContext, key: string, contentType: string) {
   return getSignedUrl(
-    s3,
-    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
+    st.s3,
+    new PutObjectCommand({ Bucket: st.bucket, Key: key, ContentType: contentType }),
     { expiresIn: 60 },
   );
 }
@@ -78,8 +69,8 @@ function publicMediaUrl(objectKey: string) {
   return `/api/public/media?key=${encodeURIComponent(objectKey)}`;
 }
 
-async function loadMenu(): Promise<MenuData> {
-  const url = await signedGet(KEY);
+async function loadMenu(st: StorageContext): Promise<MenuData> {
+  const url = await signedGet(st, KEY);
   const res = await fetch(url, { cache: "no-store" });
   if (res.status === 404 || !res.ok) return { items: [] };
   try {
@@ -90,20 +81,20 @@ async function loadMenu(): Promise<MenuData> {
   }
 }
 
-async function saveMenu(data: MenuData): Promise<void> {
-  const uploadUrl = await signedPut(KEY, "application/json");
+async function saveMenu(st: StorageContext, data: MenuData): Promise<void> {
+  const uploadUrl = await signedPut(st, KEY, "application/json");
   const put = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data, null, 2),
   });
-  if (!put.ok) throw new Error(`Échec écriture S3 (${put.status})`);
+  if (!put.ok) throw new Error(`Échec écriture stockage (${put.status})`);
 }
 
-async function createImageUploadPresign(contentType: string) {
+async function createImageUploadPresign(st: StorageContext, contentType: string) {
   const ext = contentType.split("/")[1] || "bin";
   const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const upload_url = await signedPut(objectKey, contentType);
+  const upload_url = await signedPut(st, objectKey, contentType);
   return { upload_url, photo_url: publicMediaUrl(objectKey) };
 }
 
@@ -115,6 +106,11 @@ export async function POST(req: Request) {
   if (!isAdminAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const st = getStorage();
+  if (!st) {
+    return NextResponse.json(storageConfigErrorJson(), { status: 503 });
+  }
+
   const body = (await req.json()) as {
     action?: "list" | "create" | "delete" | "presign_photo";
     id?: string;
@@ -132,13 +128,13 @@ export async function POST(req: Request) {
     if (!contentType.startsWith("image/")) {
       return NextResponse.json({ error: "Image requise" }, { status: 400 });
     }
-    return NextResponse.json(await createImageUploadPresign(contentType));
+    return NextResponse.json(await createImageUploadPresign(st, contentType));
   }
 
-  const menu = await loadMenu();
+  const menu = await loadMenu(st);
 
   if (action === "list") {
-    return NextResponse.json(menuWithRewrittenPhotos(menu));
+    return NextResponse.json(menuWithRewrittenPhotos(menu, st));
   }
 
   if (action === "create") {
@@ -154,14 +150,14 @@ export async function POST(req: Request) {
       price_info: null,
     };
     const next = { items: [item, ...(menu.items || [])] };
-    await saveMenu(next);
+    await saveMenu(st, next);
     return NextResponse.json({ ok: true, id: item.id });
   }
 
   if (action === "delete") {
     if (!body.id) return NextResponse.json({ error: "id requis" }, { status: 400 });
     const next = { items: (menu.items || []).filter((x) => x.id !== body.id) };
-    await saveMenu(next);
+    await saveMenu(st, next);
     return NextResponse.json({ ok: true });
   }
 

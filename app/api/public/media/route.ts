@@ -1,13 +1,6 @@
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-const region = process.env.REGION;
-const bucket = process.env.BUCKET_NAME;
-if (!bucket) {throw new Error("S3_BUCKET_NAME est requis.")}
-const s3 = new S3Client({ region });
+import { getStorage, storageConfigErrorJson } from "@/lib/storage-env";
 
 function safeUploadsKey(raw: string | null): string | null {
   if (!raw) return null;
@@ -24,15 +17,19 @@ function safeUploadsKey(raw: string | null): string | null {
 }
 
 export async function GET(req: Request) {
+  const st = getStorage();
+  if (!st) {
+    return NextResponse.json(storageConfigErrorJson(), { status: 503 });
+  }
   const { searchParams } = new URL(req.url);
   const key = safeUploadsKey(searchParams.get("key"));
   if (!key) {
     return new NextResponse("Not found", { status: 404 });
   }
   try {
-    const obj = await s3.send(
+    const obj = await st.s3.send(
       new GetObjectCommand({
-        Bucket: bucket,
+        Bucket: st.bucket,
         Key: key,
       }),
     );

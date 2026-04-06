@@ -10,51 +10,51 @@ export function Navbar({ announcement }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const hasAnnouncement = Boolean(announcement);
   return (
-    <nav className="fixed left-0 right-0 top-0 z-50 flex flex-col">
+    <nav className="fixed left-0 right-0 top-0 z-50 flex flex-col sm:max-h-4 md:h-20 m:h-4 md:max-h-20">
       {announcement ? (
         <div className="relative z-[60] w-full shrink-0 border-b border-white/15 bg-bordeaux-700 text-white shadow-sm">
           {announcement}
         </div>
       ) : null}
       <div className="relative z-20 w-full bg-white/75 backdrop-blur-xl shadow-[0_1px_12px_rgba(0,0,0,0.08)]">
-        <div className="mx-auto flex max-w-6xl items-center px-4 py-1.5 md:py-[8px]">
-          <div className="grid w-full grid-cols-3 items-center md:flex md:justify-between md:gap-8">
-            <div className="flex items-center">
+        <div className="mx-auto flex max-w-6xl items-center px-4 s md:overflow-hidden md:py-0">
+          <div className="grid w-full grid-cols-3 items-center md:flex md:justify-between md:gap-6 lg:gap-8">
+            <div className="flex min-w-0 items-center">
               <Link
                 href="/"
                 className="md:hidden"
                 onClick={() => setMenuOpen(false)}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <Image
                   src="/Logo.png"
                   alt="La Poêlée du Bonheur"
-                  width={64}
-                  height={64}
-                  className="h-[64px] w-[64px] object-contain"
+                  width={84}
+                  height={84}
+                  className="h-[64px] w-[64px] scale-[1.4] "
                 />
               </Link>
               <Link
                 href="/"
-                className="group hidden items-center gap-3 no-underline md:flex"
+                className="group hidden min-w-0 items-center gap-2.5 no-underline md:flex lg:gap-3"
                 onClick={() => setMenuOpen(false)}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <Image
-                  src="/Logo.png"
-                  alt="La Poêlée du Bonheur"
-                  className="block h-[60px] w-[60px] object-contain transition-transform group-hover:scale-105"
-                  width={50}
-                  height={50}
-                  
-                />
-                <span className="font-display text-[1.8rem] leading-tight text-bordeaux-700">
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden">
+                  <Image
+                    src="/Logo.png"
+                    alt="La Poêlée du Bonheur"
+                    fill
+                    className="object-contain scale-[1.4]"
+                    sizes="80px"
+                    priority
+                  />
+                </div>
+                <span className="min-w-0 font-display text-[2rem] leading-[0.95] tracking-tight text-bordeaux-700 lg:text-[2.35rem]">
                   La Poêlée du Bonheur
                 </span>
               </Link>
             </div>
             <div className="flex justify-center md:hidden">
-              <span className="whitespace-nowrap font-display text-[1.2rem] font-bold leading-tight text-bordeaux-700">
+              <span className="whitespace-nowrap font-display text-[1.6rem] font-bold leading-tight text-bordeaux-700">
                 La Poêlée du Bonheur
               </span>
             </div>

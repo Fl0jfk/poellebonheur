@@ -1,17 +1,8 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
+import { getStorage, storageConfigErrorJson, type StorageContext } from "@/lib/storage-env";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-const region = process.env.REGION;
-const bucket = process.env.BUCKET_NAME;
-if (!bucket) {
-  throw new Error("S3_BUCKET_NAME est requis.");
-}
-
-const s3 = new S3Client({ region });
 const KEY = "data/collage.json";
 
 type CollagePhoto = { id: string; src: string; alt: string };
@@ -23,18 +14,14 @@ function isAdminAuthorized(req: Request): boolean {
   return req.headers.get("x-admin-key") === expected;
 }
 
-async function signedGet(key: string) {
-  return getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
-    { expiresIn: 60 },
-  );
+async function signedGet(st: StorageContext, key: string) {
+  return getSignedUrl(st.s3, new GetObjectCommand({ Bucket: st.bucket, Key: key }), { expiresIn: 60 });
 }
 
-async function signedPut(key: string, contentType: string) {
+async function signedPut(st: StorageContext, key: string, contentType: string) {
   return getSignedUrl(
-    s3,
-    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
+    st.s3,
+    new PutObjectCommand({ Bucket: st.bucket, Key: key, ContentType: contentType }),
     { expiresIn: 60 },
   );
 }
@@ -43,7 +30,7 @@ function publicMediaUrl(objectKey: string) {
   return `/api/public/media?key=${encodeURIComponent(objectKey)}`;
 }
 
-function rewriteUploadSrc(url: string): string {
+function rewriteUploadSrc(url: string, bucket: string, region: string): string {
   const t = url.trim();
   if (t.startsWith("/api/public/media")) return t;
   try {
@@ -52,8 +39,8 @@ function rewriteUploadSrc(url: string): string {
       parsed.hostname === `${bucket}.s3.${region}.amazonaws.com` &&
       parsed.pathname.startsWith("/uploads/")
     ) {
-      const key = parsed.pathname.slice(1);
-      return `/api/public/media?key=${encodeURIComponent(key)}`;
+      const k = parsed.pathname.slice(1);
+      return `/api/public/media?key=${encodeURIComponent(k)}`;
     }
   } catch {
     /* ignore */
@@ -61,8 +48,8 @@ function rewriteUploadSrc(url: string): string {
   return t;
 }
 
-async function loadCollage(): Promise<CollageData> {
-  const url = await signedGet(KEY);
+async function loadCollage(st: StorageContext): Promise<CollageData> {
+  const url = await signedGet(st, KEY);
   const res = await fetch(url, { cache: "no-store" });
   if (res.status === 404 || !res.ok) return { photos: [] };
   try {
@@ -78,7 +65,7 @@ async function loadCollage(): Promise<CollageData> {
       )
       .map((p, idx) => ({
         id: typeof p.id === "string" && p.id ? p.id : `cp_${idx}`,
-        src: rewriteUploadSrc(p.src.trim()),
+        src: rewriteUploadSrc(p.src.trim(), st.bucket, st.region),
         alt: typeof p.alt === "string" && p.alt.trim() ? p.alt.trim() : "Photo traiteur",
       }));
     return { photos };
@@ -87,20 +74,20 @@ async function loadCollage(): Promise<CollageData> {
   }
 }
 
-async function saveCollage(data: CollageData): Promise<void> {
-  const uploadUrl = await signedPut(KEY, "application/json");
+async function saveCollage(st: StorageContext, data: CollageData): Promise<void> {
+  const uploadUrl = await signedPut(st, KEY, "application/json");
   const put = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data, null, 2),
   });
-  if (!put.ok) throw new Error(`Échec écriture S3 (${put.status})`);
+  if (!put.ok) throw new Error(`Échec écriture stockage (${put.status})`);
 }
 
-async function createImageUploadPresign(contentType: string) {
+async function createImageUploadPresign(st: StorageContext, contentType: string) {
   const ext = contentType.split("/")[1] || "bin";
   const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const upload_url = await signedPut(objectKey, contentType);
+  const upload_url = await signedPut(st, objectKey, contentType);
   return { upload_url, photo_url: publicMediaUrl(objectKey) };
 }
 
@@ -108,6 +95,11 @@ export async function POST(req: Request) {
   if (!isAdminAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const st = getStorage();
+  if (!st) {
+    return NextResponse.json(storageConfigErrorJson(), { status: 503 });
+  }
+
   const body = (await req.json()) as {
     action?: "list" | "save" | "presign_photo";
     photos?: CollagePhoto[];
@@ -120,11 +112,11 @@ export async function POST(req: Request) {
     if (!contentType.startsWith("image/")) {
       return NextResponse.json({ error: "Image requise" }, { status: 400 });
     }
-    return NextResponse.json(await createImageUploadPresign(contentType));
+    return NextResponse.json(await createImageUploadPresign(st, contentType));
   }
 
   if (action === "list") {
-    return NextResponse.json(await loadCollage());
+    return NextResponse.json(await loadCollage(st));
   }
 
   if (action === "save") {
@@ -153,11 +145,15 @@ export async function POST(req: Request) {
       return true;
     });
     if (invalid.length > 0) {
-      return NextResponse.json({ error:"Chaque photo doit être stockée sur S3 (upload fichier). Les chemins /fichier.jpg ou URLs externes non S3 ne sont pas acceptés."},
+      return NextResponse.json(
+        {
+          error:
+            "Chaque photo doit être envoyée via le bouton fichier (URL proxy /api/public/media ou hébergeur objet). Les chemins locaux type /fichier.jpg ne sont pas acceptés.",
+        },
         { status: 400 },
       );
     }
-    await saveCollage({ photos });
+    await saveCollage(st, { photos });
     return NextResponse.json({ ok: true });
   }
   return NextResponse.json({ error: "Action inconnue" }, { status: 400 });

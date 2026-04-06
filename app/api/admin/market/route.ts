@@ -1,17 +1,8 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
+import { getStorage, storageConfigErrorJson, type StorageContext } from "@/lib/storage-env";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-const region = process.env.REGION;
-const bucket = process.env.BUCKET_NAME;
-if (!bucket) {
-  throw new Error("S3_BUCKET_NAME est requis.");
-}
-
-const s3 = new S3Client({ region });
 const KEY = "data/market.json";
 
 type MarketEntry = { id: string; date: string; place: string };
@@ -24,18 +15,14 @@ function isAdminAuthorized(req: Request): boolean {
   return req.headers.get("x-admin-key") === expected;
 }
 
-async function signedGet(key: string) {
-  return getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
-    { expiresIn: 60 },
-  );
+async function signedGet(st: StorageContext, key: string) {
+  return getSignedUrl(st.s3, new GetObjectCommand({ Bucket: st.bucket, Key: key }), { expiresIn: 60 });
 }
 
-async function signedPut(key: string, contentType: string) {
+async function signedPut(st: StorageContext, key: string, contentType: string) {
   return getSignedUrl(
-    s3,
-    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
+    st.s3,
+    new PutObjectCommand({ Bucket: st.bucket, Key: key, ContentType: contentType }),
     { expiresIn: 60 },
   );
 }
@@ -69,8 +56,8 @@ function normalizeMarketsData(raw: unknown): MarketsData {
   return { markets: [] };
 }
 
-async function loadMarket(): Promise<MarketsData> {
-  const url = await signedGet(KEY);
+async function loadMarket(st: StorageContext): Promise<MarketsData> {
+  const url = await signedGet(st, KEY);
   const res = await fetch(url, { cache: "no-store" });
   if (res.status === 404 || !res.ok) return { markets: [] };
   try {
@@ -81,7 +68,7 @@ async function loadMarket(): Promise<MarketsData> {
   }
 }
 
-async function saveMarket(data: MarketsData): Promise<void> {
+async function saveMarket(st: StorageContext, data: MarketsData): Promise<void> {
   const cleaned: MarketsData = {
     markets: (data.markets || [])
       .filter((m) => m.date?.trim())
@@ -91,22 +78,26 @@ async function saveMarket(data: MarketsData): Promise<void> {
         place: (m.place || "").trim(),
       })),
   };
-  const uploadUrl = await signedPut(KEY, "application/json");
+  const uploadUrl = await signedPut(st, KEY, "application/json");
   const put = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(cleaned, null, 2),
   });
-  if (!put.ok) throw new Error(`Échec écriture S3 (${put.status})`);
+  if (!put.ok) throw new Error(`Échec écriture stockage (${put.status})`);
 }
 
 export async function POST(req: Request) {
   if (!isAdminAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const st = getStorage();
+  if (!st) {
+    return NextResponse.json(storageConfigErrorJson(), { status: 503 });
+  }
   const body = (await req.json()) as MarketsData | { markets?: unknown };
   const markets = Array.isArray((body as MarketsData).markets) ? (body as MarketsData).markets : [];
-  await saveMarket({ markets });
+  await saveMarket(st, { markets });
   return NextResponse.json({ ok: true });
 }
 
@@ -114,5 +105,9 @@ export async function GET(req: Request) {
   if (!isAdminAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return NextResponse.json(await loadMarket());
+  const st = getStorage();
+  if (!st) {
+    return NextResponse.json(storageConfigErrorJson(), { status: 503 });
+  }
+  return NextResponse.json(await loadMarket(st));
 }

@@ -1,15 +1,8 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
+import { getStorage, storageConfigErrorJson, type StorageContext } from "@/lib/storage-env";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-const region = process.env.REGION ;
-const bucket = process.env.BUCKET_NAME;
-if (!bucket) { throw new Error("S3_BUCKET_NAME est requis.")}
-
-const s3 = new S3Client({ region });
 const KEY = "data/quotes.json";
 
 type QuoteRequest = {
@@ -43,24 +36,20 @@ type NewQuote = {
   message?: string;
 };
 
-async function signedGet(key: string) {
+async function signedGet(st: StorageContext, key: string) {
+  return getSignedUrl(st.s3, new GetObjectCommand({ Bucket: st.bucket, Key: key }), { expiresIn: 60 });
+}
+
+async function signedPut(st: StorageContext, key: string, contentType: string) {
   return getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
+    st.s3,
+    new PutObjectCommand({ Bucket: st.bucket, Key: key, ContentType: contentType }),
     { expiresIn: 60 },
   );
 }
 
-async function signedPut(key: string, contentType: string) {
-  return getSignedUrl(
-    s3,
-    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
-    { expiresIn: 60 },
-  );
-}
-
-async function loadQuotes(): Promise<QuotesData> {
-  const url = await signedGet(KEY);
+async function loadQuotes(st: StorageContext): Promise<QuotesData> {
+  const url = await signedGet(st, KEY);
   const res = await fetch(url, { cache: "no-store" });
   if (res.status === 404 || !res.ok) return { quotes: [] };
   try {
@@ -71,14 +60,14 @@ async function loadQuotes(): Promise<QuotesData> {
   }
 }
 
-async function saveQuotes(data: QuotesData): Promise<void> {
-  const uploadUrl = await signedPut(KEY, "application/json");
+async function saveQuotes(st: StorageContext, data: QuotesData): Promise<void> {
+  const uploadUrl = await signedPut(st, KEY, "application/json");
   const put = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data, null, 2),
   });
-  if (!put.ok) throw new Error(`Échec écriture S3 (${put.status})`);
+  if (!put.ok) throw new Error(`Échec écriture stockage (${put.status})`);
 }
 
 function quoteId() {
@@ -86,12 +75,17 @@ function quoteId() {
 }
 
 export async function POST(req: Request) {
+  const st = getStorage();
+  if (!st) {
+    return NextResponse.json(storageConfigErrorJson(), { status: 503 });
+  }
+
   const body = (await req.json()) as NewQuote;
   if (!body.last_name || !body.first_name || !body.email || !body.main_dish) {
     return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
   }
 
-  const quotesData = await loadQuotes();
+  const quotesData = await loadQuotes(st);
   const newQuote: QuoteRequest = {
     id: quoteId(),
     last_name: body.last_name.trim(),
@@ -107,6 +101,6 @@ export async function POST(req: Request) {
     message: body.message?.trim() || null,
     created_at: new Date().toISOString(),
   };
-  await saveQuotes({ quotes: [newQuote, ...(quotesData.quotes || [])] });
+  await saveQuotes(st, { quotes: [newQuote, ...(quotesData.quotes || [])] });
   return NextResponse.json({ ok: true, id: newQuote.id });
 }
