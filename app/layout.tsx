@@ -1,0 +1,16 @@
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "La Poêlée du Bonheur — Traiteur événementielle",
+  description:
+    "Traiteur paella et cuisine méditerranéenne pour vos événements. Mariages, anniversaires, marchés. Devis gratuit.",
+};
+
+export default function RootLayout({children,}: Readonly<{children: React.ReactNode}>) {
+  return (
+    <html lang="fr">
+      <body>{children}</body>
+    </html>
+  );
+}

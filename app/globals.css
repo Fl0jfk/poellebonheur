@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Amatic SC";
+  src: url("/fonts/AmaticSC-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Amatic SC";
+  src: url("/fonts/AmaticSC-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-creme-50 text-ardoise-800 font-body antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+  h4,
+  h5 {
+    @apply font-hand font-bold;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex cursor-pointer items-center gap-2 rounded-full border-2 border-transparent px-6 py-3 text-sm font-semibold font-body transition-all duration-200;
+  }
+  .btn-primary {
+    @apply border-bordeaux-700 bg-bordeaux-700 text-white hover:border-bordeaux-800 hover:bg-bordeaux-800 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+  .btn-safran {
+    @apply border-safran-500 bg-safran-500 text-white hover:border-safran-600 hover:bg-safran-600 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+  .btn-outline {
+    @apply border-bordeaux-700 bg-transparent text-bordeaux-700 hover:-translate-y-0.5 hover:bg-bordeaux-700 hover:text-white;
+  }
+  .btn-white {
+    @apply border-white bg-white text-bordeaux-700 hover:-translate-y-0.5 hover:border-creme-100 hover:bg-creme-100;
+  }
+  .btn-ghost {
+    @apply border-white/50 bg-transparent text-white hover:border-white/80 hover:bg-white/10;
+  }
+  .card {
+    @apply overflow-hidden rounded-3xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl;
+  }
+  .form-label {
+    @apply mb-1.5 block text-sm font-semibold font-body text-ardoise-700;
+  }
+  .form-input {
+    @apply w-full rounded-2xl border-2 border-creme-200 bg-white px-4 py-2.5 text-sm font-body text-ardoise-800 outline-none transition-colors duration-150 placeholder:text-ardoise-400 focus:border-bordeaux-400 focus:ring-4 focus:ring-bordeaux-100;
+  }
+  .form-input-select {
+    @apply h-12 min-h-[3rem] py-0 text-base leading-normal;
+  }
+  .tag {
+    @apply inline-block rounded-full px-3 py-1 text-xs font-semibold font-body uppercase tracking-wide;
+  }
+  .section-label {
+    @apply font-hand text-lg font-semibold;
+  }
+  .section-title {
+    @apply font-display text-4xl md:text-5xl;
+  }
+}
+
+/* Collage slider (React state driven) */
+.collage-slider {
+  position: relative;
+  width: min(96vw, 920px);
+  margin: 0 auto;
+}
+.collage-stage {
+  position: relative;
+  height: clamp(280px, 52vw, 620px);
+  overflow: hidden;
+}
+.collage-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  overflow: hidden;
+  transition: transform 0.5s ease, opacity 0.35s ease;
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.45);
+}
+.collage-card.active {
+  width: min(78vw, 360px);
+  height: min(54vw, 280px);
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  z-index: 3;
+}
+.collage-card.prev {
+  width: min(56vw, 230px);
+  height: min(40vw, 170px);
+  transform: translate(calc(-50% - 185px), -50%) rotate(-9deg);
+  opacity: 0.78;
+  z-index: 2;
+}
+.collage-card.next {
+  width: min(56vw, 230px);
+  height: min(40vw, 170px);
+  transform: translate(calc(-50% + 185px), -50%) rotate(9deg);
+  opacity: 0.78;
+  z-index: 2;
+}
+.collage-card.hidden-card {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.9);
+  z-index: 1;
+}
+@media (max-width: 640px) {
+  .collage-slider {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
+  .collage-stage {
+    height: 72vw;
+  }
+  .collage-card.active {
+    width: 82vw;
+    height: 58vw;
+  }
+  .collage-card.prev {
+    width: 50vw;
+    height: 35vw;
+    transform: translate(calc(-50% - 120px), -50%) rotate(-9deg);
+  }
+  .collage-card.next {
+    width: 50vw;
+    height: 35vw;
+    transform: translate(calc(-50% + 120px), -50%) rotate(9deg);
+  }
+}
+
+/* Desktop : les cartes font ~170–280px de haut ; un stage à 620px laissait d’énormes marges vides */
+@media (min-width: 641px) {
+  .collage-stage {
+    /* ≥ hauteur max d’une carte active (280px) + marge pour ombre / léger débord */
+    height: clamp(288px, 30vw, 360px);
+  }
+}

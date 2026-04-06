@@ -1,0 +1,169 @@
+import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const region = process.env.AWS_REGION || "eu-west-3";
+const bucket = process.env.S3_BUCKET_NAME;
+if (!bucket) {
+  throw new Error("S3_BUCKET_NAME est requis.");
+}
+
+const s3 = new S3Client({ region });
+const KEY = "data/collage.json";
+
+type CollagePhoto = { id: string; src: string; alt: string };
+type CollageData = { photos: CollagePhoto[] };
+
+function isAdminAuthorized(req: Request): boolean {
+  const expected = process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY || "";
+  if (!expected) return true;
+  return req.headers.get("x-admin-key") === expected;
+}
+
+async function signedGet(key: string) {
+  return getSignedUrl(
+    s3,
+    new GetObjectCommand({ Bucket: bucket, Key: key }),
+    { expiresIn: 60 },
+  );
+}
+
+async function signedPut(key: string, contentType: string) {
+  return getSignedUrl(
+    s3,
+    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
+    { expiresIn: 60 },
+  );
+}
+
+function publicMediaUrl(objectKey: string) {
+  return `/api/public/media?key=${encodeURIComponent(objectKey)}`;
+}
+
+function rewriteUploadSrc(url: string): string {
+  const t = url.trim();
+  if (t.startsWith("/api/public/media")) return t;
+  try {
+    const parsed = new URL(t);
+    if (
+      parsed.hostname === `${bucket}.s3.${region}.amazonaws.com` &&
+      parsed.pathname.startsWith("/uploads/")
+    ) {
+      const key = parsed.pathname.slice(1);
+      return `/api/public/media?key=${encodeURIComponent(key)}`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return t;
+}
+
+async function loadCollage(): Promise<CollageData> {
+  const url = await signedGet(KEY);
+  const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 404 || !res.ok) return { photos: [] };
+  try {
+    const raw = (await res.json()) as { photos?: unknown };
+    if (!Array.isArray(raw.photos)) return { photos: [] };
+    const photos = raw.photos
+      .filter(
+        (p): p is CollagePhoto =>
+          p != null &&
+          typeof p === "object" &&
+          typeof (p as CollagePhoto).src === "string" &&
+          Boolean((p as CollagePhoto).src.trim()),
+      )
+      .map((p, idx) => ({
+        id: typeof p.id === "string" && p.id ? p.id : `cp_${idx}`,
+        src: rewriteUploadSrc(p.src.trim()),
+        alt: typeof p.alt === "string" && p.alt.trim() ? p.alt.trim() : "Photo traiteur",
+      }));
+    return { photos };
+  } catch {
+    return { photos: [] };
+  }
+}
+
+async function saveCollage(data: CollageData): Promise<void> {
+  const uploadUrl = await signedPut(KEY, "application/json");
+  const put = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data, null, 2),
+  });
+  if (!put.ok) throw new Error(`Échec écriture S3 (${put.status})`);
+}
+
+async function createImageUploadPresign(contentType: string) {
+  const ext = contentType.split("/")[1] || "bin";
+  const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const upload_url = await signedPut(objectKey, contentType);
+  return { upload_url, photo_url: publicMediaUrl(objectKey) };
+}
+
+export async function POST(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const body = (await req.json()) as {
+    action?: "list" | "save" | "presign_photo";
+    photos?: CollagePhoto[];
+    content_type?: string;
+  };
+  const action = body.action || "list";
+
+  if (action === "presign_photo") {
+    const contentType = body.content_type || "application/octet-stream";
+    if (!contentType.startsWith("image/")) {
+      return NextResponse.json({ error: "Image requise" }, { status: 400 });
+    }
+    return NextResponse.json(await createImageUploadPresign(contentType));
+  }
+
+  if (action === "list") {
+    return NextResponse.json(await loadCollage());
+  }
+
+  if (action === "save") {
+    const photos = (body.photos || [])
+      .filter((p) => p && typeof p.src === "string" && p.src.trim())
+      .map((p, idx) => ({
+        id: p.id?.trim() || `cp_${idx}_${Date.now()}`,
+        src: p.src.trim(),
+        alt: p.alt?.trim() || "Photo traiteur",
+      }));
+    if (photos.length < 5 || photos.length > 8) {
+      return NextResponse.json(
+        { error: "Le photocollage doit contenir entre 5 et 8 photos." },
+        { status: 400 },
+      );
+    }
+    const invalid = photos.filter((p) => {
+      const t = p.src;
+      if (t.startsWith("/api/public/media?key=")) return false;
+      try {
+        const u = new URL(t);
+        if (u.hostname.includes("amazonaws.com") && u.pathname.includes("/uploads/")) return false;
+      } catch {
+        /* ignore */
+      }
+      return true;
+    });
+    if (invalid.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Chaque photo doit être stockée sur S3 (upload fichier). Les chemins /fichier.jpg ou URLs externes non S3 ne sont pas acceptés.",
+        },
+        { status: 400 },
+      );
+    }
+    await saveCollage({ photos });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
+}
