@@ -1,9 +1,0 @@
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/potential_utf-f27aa597fbf4835c.d: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/uchar.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/ustr.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/libpotential_utf-f27aa597fbf4835c.rlib: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/uchar.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/ustr.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/libpotential_utf-f27aa597fbf4835c.rmeta: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/uchar.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/ustr.rs
-
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/lib.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/uchar.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.4/src/ustr.rs:

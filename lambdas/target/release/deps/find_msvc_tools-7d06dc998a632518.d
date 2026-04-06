@@ -1,9 +1,0 @@
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/release/deps/find_msvc_tools-7d06dc998a632518.d: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/find_tools.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/tool.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/release/deps/libfind_msvc_tools-7d06dc998a632518.rlib: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/find_tools.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/tool.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/release/deps/libfind_msvc_tools-7d06dc998a632518.rmeta: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/find_tools.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/tool.rs
-
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/lib.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/find_tools.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.9/src/tool.rs:

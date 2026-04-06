@@ -1,4 +1,7 @@
 /target
 .env
+.env.local
 node_modules/
 dist/
+.next/
+out/

@@ -1,1 +1,0 @@
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/send-devis: /Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/src/bin/send_devis.rs /Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/src/lib.rs

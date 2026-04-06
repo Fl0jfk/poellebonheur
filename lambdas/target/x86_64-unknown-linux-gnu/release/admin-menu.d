@@ -1,1 +1,0 @@
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/admin-menu: /Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/src/bin/admin_menu.rs /Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/src/lib.rs

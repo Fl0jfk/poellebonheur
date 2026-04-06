@@ -1,9 +1,0 @@
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/urlencoding-2ffe2b73cc623e54.d: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/enc.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/dec.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/liburlencoding-2ffe2b73cc623e54.rlib: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/enc.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/dec.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/liburlencoding-2ffe2b73cc623e54.rmeta: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/enc.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/dec.rs
-
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/lib.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/enc.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/dec.rs:

@@ -1,9 +1,0 @@
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/http_body-3b0516898f6e8288.d: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/frame.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/size_hint.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/libhttp_body-3b0516898f6e8288.rlib: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/frame.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/size_hint.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/libhttp_body-3b0516898f6e8288.rmeta: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/frame.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/size_hint.rs
-
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/lib.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/frame.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/size_hint.rs:

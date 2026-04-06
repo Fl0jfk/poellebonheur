@@ -1,9 +1,0 @@
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/once_cell-cdaf8c5ef3824ce2.d: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/imp_std.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/race.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/libonce_cell-cdaf8c5ef3824ce2.rlib: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/imp_std.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/race.rs
-
-/Users/florianhacqueville-mathi/Desktop/traiteur-website/lambdas/target/x86_64-unknown-linux-gnu/release/deps/libonce_cell-cdaf8c5ef3824ce2.rmeta: /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/lib.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/imp_std.rs /Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/race.rs
-
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/lib.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/imp_std.rs:
-/Users/florianhacqueville-mathi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.4/src/race.rs:
