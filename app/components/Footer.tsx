@@ -73,10 +73,10 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="mailto:contact@lapoeleedubonheur.fr"
+                  href="mailto:lapoeleedubonheur@gmail.com"
                   className="flex items-center gap-2 font-body text-sm text-ardoise-400 transition-colors hover:text-safran-400"
                 >
-                  ✉️ contact@lapoeleedubonheur.fr
+                  ✉️ lapoeleedubonheur@gmail.com
                 </a>
               </li>
             </ul>
