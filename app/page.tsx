@@ -9,27 +9,14 @@ import { PhotoCollage } from "@/app/components/PhotoCollage";
 type MenuCategoryNorm = "starter" | "main_dish" | "dessert";
 type MarketEntry = { id: string; date: string; place: string };
 type MarketsData = { markets: MarketEntry[] };
-type MenuItem = {
-  id: string;
-  name: string;
-  description: string;
-  photo_url?: string | null;
-  category: string;
-  partner_name?: string | null;
-  partner_url?: string | null;
-  partner_logo_url?: string | null;
-};
+type MenuItem = { id: string; name: string; description: string; photo_url?: string | null; category: string; partner_name?: string | null; partner_url?: string | null; partner_logo_url?: string | null};
 type MenuData = { items: MenuItem[] };
 
 const CATS: MenuCategoryNorm[] = ["starter", "main_dish", "dessert"];
 
-function menuJsonUrl() {
-  return "/api/public/menu";
-}
+function menuJsonUrl() { return "/api/public/menu"}
 
-function marketJsonUrl() {
-  return "/api/public/market";
-}
+function marketJsonUrl() { return "/api/public/market"}
 
 function normalizeMenuCategory(raw: string): MenuCategoryNorm {
   const lower = raw.trim().toLowerCase().replace(/-/g, "_");
@@ -108,26 +95,16 @@ export default function HomePage() {
       if (mRes.ok) {
         const raw = (await mRes.json()) as MarketsData;
         setMarketsData(Array.isArray(raw.markets) ? raw : { markets: [] });
-      } else {
-        setMarketsData({ markets: [] });
-      }
+      } else { setMarketsData({ markets: [] })}
       setMenu(menuRes.ok ? ((await menuRes.json()) as MenuData) : { items: [] });
     })();
-    return () => {
-      ok = false;
-    };
+    return () => { ok = false};
   }, []);
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar announcement={marketAnnouncement} />
       <section
-        className={
-          visibleMarkets.length > 0
-            ? visibleMarkets.length > 1
-              ? "relative flex min-h-screen items-center justify-center pt-[calc(env(safe-area-inset-top,0px)+8.5rem)]"
-              : "relative flex min-h-screen items-center justify-center pt-[calc(env(safe-area-inset-top,0px)+7.5rem)]"
-            : "relative flex min-h-screen items-center justify-center pt-[calc(env(safe-area-inset-top,0px)+3.75rem)]"
-        }
+        className={ visibleMarkets.length > 0 ? visibleMarkets.length > 1 ? "relative flex min-h-screen items-center justify-center pt-[calc(env(safe-area-inset-top,0px)+8.5rem)]": "relative flex min-h-screen items-center justify-center pt-[calc(env(safe-area-inset-top,0px)+7.5rem)]" : "relative flex min-h-screen items-center justify-center pt-[calc(env(safe-area-inset-top,0px)+3.75rem)]"}
       >
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-ardoise-700 via-ardoise-800 to-ardoise-900" />
@@ -156,18 +133,14 @@ export default function HomePage() {
               <span className="text-safran-400">du Bonheur</span>
             </h1>
             <p className="mb-3 font-hand text-2xl text-ardoise-300">Traiteur événementiel & marchés</p>
-            <p className="mx-auto mb-8 max-w-2xl font-body text-lg leading-relaxed text-ardoise-300 mx-4">
+            <p className="mb-8 max-w-2xl font-body text-lg leading-relaxed text-ardoise-300 mx-auto px-6">
               Poêlées gourmandes et cuisine généreuse : paella, jambalaya, tartiflette, rougail
               saucisse, mais aussi entrées et desserts maison. La carte évolue souvent selon les
-              saisons et les envies. 🥘
+              saisons et les envies. 
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/devis" className="btn btn-safran px-10 py-4 text-base shadow-lg">
-                🍽️ Demander un devis
-              </Link>
-              <Link href="#menu" className="btn btn-ghost px-8 py-4 text-base">
-                Voir notre carte
-              </Link>
+              <Link href="/devis" className="btn btn-safran px-10 py-4 text-base shadow-lg">🍽️ Demander un devis</Link>
+              <Link href="#menu" className="btn btn-ghost px-8 py-4 text-base">Voir notre carte</Link>
             </div>
           </div>
         </div>
@@ -189,19 +162,12 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section id="about" className="bg-creme-50 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 items-center gap-16 md:grid-cols-2">
             <div className="relative flex justify-center">
               <div className="relative">
-                <Image
-                  src="/Logo.png"
-                  alt="La Poêlée du Bonheur"
-                  className="drop-shadow-xl"
-                  width={300}
-                  height={300}      
-                />
+                <Image src="/Logo.png" alt="La Poêlée du Bonheur" className="drop-shadow-xl" width={300} height={300}/>
                 <div className="absolute -bottom-4 -right-4 rounded-2xl bg-safran-500 px-5 py-3 text-white shadow-lg">
                   <p className="font-hand text-lg font-bold">Devis gratuit !</p>
                 </div>
@@ -281,10 +247,7 @@ export default function HomePage() {
                     </h3>
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {catItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="card overflow-hidden border border-creme-100"
-                        >
+                        <div key={item.id} className="card overflow-hidden border border-creme-100">
                           {item.photo_url ? (
                             <div className="relative h-48 w-full">
                               <Image src={item.photo_url} alt={item.name} fill className="object-cover"/>
@@ -333,15 +296,11 @@ export default function HomePage() {
               })}
             </div>
           )}
-
           <div className="mt-14 text-center">
-            <Link href="/devis" className="btn btn-primary px-10 py-4 text-base">
-              🍽️ Composer mon menu sur mesure
-            </Link>
+            <Link href="/devis" className="btn btn-primary px-10 py-4 text-base">🍽️ Composer mon menu sur mesure</Link>
           </div>
         </div>
       </section>
-
       <section className="relative overflow-hidden bg-gradient-to-br from-ardoise-800 to-ardoise-900 py-24 text-center text-white">
         <div
           className="absolute inset-0 opacity-10"
@@ -367,9 +326,7 @@ export default function HomePage() {
             <Link href="/devis" className="btn btn-safran px-10 py-4 text-base shadow-xl">
               Demander un devis gratuit
             </Link>
-            <a href="tel:0745852654" className="btn btn-white px-8 py-4 text-base">
-              📞 07.45.85.26.54
-            </a>
+            <a href="tel:0745852654" className="btn btn-white px-8 py-4 text-base"> 📞 07.45.85.26.54</a>
           </div>
         </div>
       </section>
