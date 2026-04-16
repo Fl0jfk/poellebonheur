@@ -3,8 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "La Poêlée du Bonheur — Traiteur événementielle",
-  description:
-    "Traiteur poêlées pour vos événements. Mariages, anniversaires, marchés. Devis gratuit.",
+  description:"Traiteur poêlées pour vos événements. Mariages, anniversaires, marchés. Devis gratuit.",
 };
 
 export default function RootLayout({children,}: Readonly<{children: React.ReactNode}>) {

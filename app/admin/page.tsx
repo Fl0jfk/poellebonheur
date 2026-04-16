@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 
 type MarketEntry = { id: string; date: string; place: string };
 type MarketsData = { markets: MarketEntry[] };
@@ -645,10 +646,11 @@ function MenuPanel() {
                   onClick={() => startEdit(item)}
                 >
                   {item.photo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={item.photo_url}
                       alt=""
+                      width={100}
+                      height={100}
                       className="h-16 w-16 flex-shrink-0 rounded-lg border border-creme-100 object-cover sm:h-20 sm:w-20"
                     />
                   ) : null}
@@ -699,7 +701,6 @@ function MarketPanel() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
-
   const load = useCallback(async () => {
     setLoading(true);
     const r = await fetch(marketJsonUrl());
@@ -823,8 +824,6 @@ function MarketPanel() {
 
 const COLLAGE_MIN = 5;
 const COLLAGE_MAX = 8;
-
-/** Vrai stockage = objet S3 ; l’URL `/api/public/media?...` est seulement le proxy Next (pas le dossier `public/` du site). */
 function isS3BackedCollageSrc(src: string): boolean {
   const t = src.trim();
   if (!t) return false;
@@ -947,12 +946,6 @@ function CollagePanel() {
             Entre <strong>{COLLAGE_MIN}</strong> et <strong>{COLLAGE_MAX}</strong> photos. Lignes avec image :{" "}
             <strong>{filledCount}</strong> · emplacements : <strong>{photos.length}</strong>
           </p>
-          <p className="mt-2 max-w-xl text-xs leading-relaxed text-ardoise-500">
-            Les fichiers sont enregistrés sur <strong>Amazon S3</strong> (clé <code className="rounded bg-creme-100 px-1">uploads/…</code>
-            ), pas dans le dossier <code className="rounded bg-creme-100 px-1">public/</code> du site. L’adresse{" "}
-            <code className="rounded bg-creme-100 px-1">/api/public/media?…</code> sert uniquement à afficher l’image
-            depuis S3.
-          </p>
         </div>
         <button
           type="button"
@@ -986,10 +979,11 @@ function CollagePanel() {
                   <label className="form-label">Image (envoi vers S3)</label>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     {photo.src ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={photo.src}
                         alt=""
+                        width={50}
+                        height={50}
                         className="h-24 w-32 shrink-0 rounded-lg border border-creme-200 object-cover"
                       />
                     ) : (
