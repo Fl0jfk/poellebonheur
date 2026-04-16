@@ -15,6 +15,9 @@ type MenuItem = {
   description: string;
   photo_url?: string | null;
   category: string;
+  partner_name?: string | null;
+  partner_url?: string | null;
+  partner_logo_url?: string | null;
 };
 type MenuData = { items: MenuItem[] };
 
@@ -138,7 +141,7 @@ export default function HomePage() {
           <div className="absolute left-10 top-20 h-72 w-72 rounded-full bg-bordeaux-700/20 blur-3xl" />
           <div className="absolute bottom-20 right-10 h-96 w-96 rounded-full bg-safran-500/15 blur-3xl" />
         </div>
-        <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
+        <div className="relative z-10 mx-auto w-full max-w-4xl text-center pt-10">
           <div
             className={
               visibleMarkets.length > 0 ? "flex justify-center px-0 pt-2 max-sm:pt-4 sm:px-6" : "flex justify-center px-0 sm:px-6"
@@ -146,16 +149,17 @@ export default function HomePage() {
           >
             <PhotoCollage hasMarketBanner={visibleMarkets.length > 0} />
           </div>
-          <div className="pb-4 md:mt-12">
+          <div className="pb-4 mt-12">
             <h1 className="mb-4 font-display text-5xl text-white drop-shadow-lg md:text-7xl">
               La Poêlée
               <br />
               <span className="text-safran-400">du Bonheur</span>
             </h1>
-            <p className="mb-3 font-hand text-2xl text-ardoise-300">Traiteur événementielle</p>
-            <p className="mx-auto mb-8 max-w-2xl font-body text-lg leading-relaxed text-ardoise-300">
-              Paella géante, fruits de mer et saveurs méditerranéennes cuisinés avec passion pour vos
-              mariages, anniversaires et marchés. 🦐🥘
+            <p className="mb-3 font-hand text-2xl text-ardoise-300">Traiteur événementiel & marchés</p>
+            <p className="mx-auto mb-8 max-w-2xl font-body text-lg leading-relaxed text-ardoise-300 mx-4">
+              Poêlées gourmandes et cuisine généreuse : paella, jambalaya, tartiflette, rougail
+              saucisse, mais aussi entrées et desserts maison. La carte évolue souvent selon les
+              saisons et les envies. 🥘
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/devis" className="btn btn-safran px-10 py-4 text-base shadow-lg">
@@ -173,9 +177,9 @@ export default function HomePage() {
           <div className="grid grid-cols-2 gap-8 text-center md:grid-cols-4">
             {[
               ["100%", "Fait maison"],
-              ["🦐", "Fruits de mer frais"],
-              ["🥘", "Paella géante"],
-              ["❤️", "Avec passion"],
+              ["🦐", "Produits frais"],
+              ["🥘", "Poêlées variées"],
+              ["🍮", "Entrées & desserts"],
             ].map(([a, b]) => (
               <div key={b}>
                 <p className="mb-1 font-display text-4xl text-safran-400">{a}</p>
@@ -214,18 +218,20 @@ export default function HomePage() {
                 et conviviale
               </h2>
               <p className="mb-4 font-body leading-relaxed text-ardoise-600">
-                La Poêlée du Bonheur, c&apos;est la promesse d&apos;une paella authentique et
-                généreuse, préparée avec des produits frais de qualité. Nous nous déplaçons pour
-                sublimer tous vos événements : mariages, anniversaires, fêtes de famille,
-                séminaires...
+                La Poêlée du Bonheur, c&apos;est une cuisine authentique et généreuse, préparée
+                avec des produits frais de qualité. Nous proposons des poêlées salées variées
+                (paella, jambalaya, tartiflette, rougail saucisse...) ainsi que des entrées et des
+                desserts. La carte change régulièrement pour offrir un vrai tour des saveurs sur
+                les marchés et lors de vos événements.
               </p>
               <p className="mb-8 font-body leading-relaxed text-ardoise-600">
-                Retrouvez-nous aussi sur les marchés locaux pour un avant-goût de bonheur !
+                Exemples du moment : assiettes de charcuterie en entrée, crème brûlée, mousse au
+                chocolat ou panna cotta en dessert. Retrouvez-nous sur les marchés locaux !
               </p>
               <div className="flex flex-wrap gap-3">
-                <span className="tag bg-bordeaux-100 text-bordeaux-700">🥘 Paella géante</span>
-                <span className="tag bg-safran-100 text-safran-700">🦐 Fruits de mer</span>
-                <span className="tag bg-creme-200 text-ardoise-700">🫒 Méditerranéen</span>
+                <span className="tag bg-bordeaux-100 text-bordeaux-700">🥘 Poêlées variées</span>
+                <span className="tag bg-safran-100 text-safran-700">🥗 Entrées maison</span>
+                <span className="tag bg-creme-200 text-ardoise-700">🍮 Desserts maison</span>
                 <span className="tag bg-creme-200 text-ardoise-700">🌿 Produits frais</span>
               </div>
             </div>
@@ -240,7 +246,8 @@ export default function HomePage() {
               Des saveurs <span className="text-bordeaux-700">qui régalent</span>
             </h2>
             <p className="mx-auto max-w-xl font-body text-ardoise-500">
-              Chaque plat est préparé le jour même avec des ingrédients frais et de saison.
+              Entrées, plats et desserts : la carte varie régulièrement avec des produits frais et
+              de saison.
             </p>
           </div>
           {menu === undefined ? (
@@ -294,6 +301,29 @@ export default function HomePage() {
                             <p className="mb-3 font-body text-sm leading-relaxed text-ardoise-500">
                               {item.description}
                             </p>
+                            {normalizeMenuCategory(item.category) === "main_dish" &&
+                            item.partner_url?.trim() &&
+                            item.partner_name?.trim() ? (
+                              <a
+                                href={item.partner_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 rounded-full border border-creme-200 bg-creme-50 px-3 py-1.5 text-xs font-semibold text-ardoise-700 hover:border-bordeaux-300 hover:text-bordeaux-700"
+                              >
+                                {item.partner_logo_url?.trim() ? (
+                                  <Image
+                                    src={item.partner_logo_url}
+                                    alt={item.partner_name}
+                                    width={18}
+                                    height={18}
+                                    className="h-[18px] w-[18px] rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <span aria-hidden>🤝</span>
+                                )}
+                                En partenariat avec {item.partner_name}
+                              </a>
+                            ) : null}
                           </div>
                         </div>
                       ))}
@@ -329,7 +359,9 @@ export default function HomePage() {
             <span className="text-safran-400">notre bonheur !</span>
           </h2>
           <p className="mb-10 font-body text-lg leading-relaxed text-ardoise-300">
-            Parlez-nous de votre projet. On vous prépare un devis gratuit et personnalisé.
+            Parlez-nous de votre projet : poêlées, entrées et desserts maison (charcuterie, crème
+            brûlée, mousse au chocolat, panna cotta...). On vous prépare un devis gratuit et
+            personnalisé.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <Link href="/devis" className="btn btn-safran px-10 py-4 text-base shadow-xl">

@@ -11,6 +11,9 @@ type MenuItem = {
   photo_url?: string | null;
   category: string;
   price_info?: string | null;
+  partner_name?: string | null;
+  partner_url?: string | null;
+  partner_logo_url?: string | null;
 };
 type MenuData = { items: MenuItem[] };
 type CollagePhoto = { id: string; src: string; alt: string };
@@ -25,8 +28,11 @@ type QuoteRequest = {
   event_place: string;
   number_of_people: number;
   starters: string[];
+  starters_labels?: string[];
   main_dish: string;
+  main_dish_label?: string;
   desserts: string[];
+  desserts_labels?: string[];
   message?: string | null;
   created_at: string;
 };
@@ -83,6 +89,9 @@ async function createMenuItem(payload: {
   description: string;
   category: string;
   photo_url?: string | null;
+  partner_name?: string | null;
+  partner_url?: string | null;
+  partner_logo_url?: string | null;
 }) {
   const r = await fetch("/api/admin/menu", {
     method: "POST",
@@ -244,13 +253,32 @@ function formatDishIds(ids: unknown, names: Record<string, string>): string {
     .join(", ");
 }
 
+function formatDishLabels(
+  ids: unknown,
+  labels: unknown,
+  names: Record<string, string>,
+): string {
+  if (Array.isArray(labels)) {
+    const cleanLabels = labels
+      .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+      .map((v) => v.trim());
+    if (cleanLabels.length > 0) return cleanLabels.join(", ");
+  }
+  return formatDishIds(ids, names);
+}
+
 function QuoteCard({ q, dishNames }: { q: QuoteRequest; dishNames: Record<string, string> }) {
   const created = typeof q.created_at === "string" ? q.created_at : "";
   const dateShort = created.slice(0, 10) || "—";
   const eventDate = q.event_date || "Date non précisée";
-  const starters = formatDishIds(q.starters, dishNames);
-  const desserts = formatDishIds(q.desserts, dishNames);
-  const mainLabel = q.main_dish ? dishNames[q.main_dish] || q.main_dish : "";
+  const starters = formatDishLabels(q.starters, q.starters_labels, dishNames);
+  const desserts = formatDishLabels(q.desserts, q.desserts_labels, dishNames);
+  const mainLabel =
+    typeof q.main_dish_label === "string" && q.main_dish_label.trim()
+      ? q.main_dish_label.trim()
+      : q.main_dish
+        ? dishNames[q.main_dish] || q.main_dish
+        : "";
   const fullName = `${q.first_name ?? ""} ${q.last_name ?? ""}`.trim() || "—";
 
   return (
@@ -373,6 +401,9 @@ function MenuPanel() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("starter");
   const [photoUrl, setPhotoUrl] = useState("");
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerUrl, setPartnerUrl] = useState("");
+  const [partnerLogoUrl, setPartnerLogoUrl] = useState("");
   const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [menuOk, setMenuOk] = useState<string | null>(null);
@@ -420,10 +451,16 @@ function MenuPanel() {
         description: description.trim(),
         category,
         photo_url: photoUrl.trim() || null,
+        partner_name: partnerName.trim() || null,
+        partner_url: partnerUrl.trim() || null,
+        partner_logo_url: partnerLogoUrl.trim() || null,
       });
       setName("");
       setDescription("");
       setPhotoUrl("");
+      setPartnerName("");
+      setPartnerUrl("");
+      setPartnerLogoUrl("");
       setPhotoNote(null);
       if (menuPhotoFileRef.current) menuPhotoFileRef.current.value = "";
       setMenuOk("Plat enregistré.");
@@ -481,6 +518,35 @@ function MenuPanel() {
               accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
               className="form-input text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-creme-100 file:px-3 file:py-1.5 file:text-ardoise-700"
               onChange={onPhotoChange}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="form-label">Nom du partenaire (optionnel)</label>
+              <input
+                className="form-input"
+                value={partnerName}
+                onChange={(e) => setPartnerName(e.target.value)}
+                placeholder="Ex : Maison Dupont"
+              />
+            </div>
+            <div>
+              <label className="form-label">Lien partenaire (optionnel)</label>
+              <input
+                className="form-input"
+                value={partnerUrl}
+                onChange={(e) => setPartnerUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+          <div>
+            <label className="form-label">Logo partenaire (URL, optionnel)</label>
+            <input
+              className="form-input"
+              value={partnerLogoUrl}
+              onChange={(e) => setPartnerLogoUrl(e.target.value)}
+              placeholder="/api/public/media?key=... ou https://..."
             />
           </div>
           {photoNote ? <p className="text-sm text-ardoise-600">{photoNote}</p> : null}
@@ -562,12 +628,17 @@ function MarketPanel() {
     setLoading(true);
     const r = await fetch(marketJsonUrl());
     if (!r.ok) {
-      setMarkets([]);
+      setMarkets([{ id: `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, date: "", place: "" }]);
       setLoading(false);
       return;
     }
     const data = (await r.json()) as MarketsData;
-    setMarkets(Array.isArray(data.markets) ? data.markets : []);
+    const list = Array.isArray(data.markets) ? data.markets : [];
+    setMarkets(
+      list.length > 0
+        ? list
+        : [{ id: `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, date: "", place: "" }],
+    );
     setLoading(false);
   }, []);
 
@@ -630,9 +701,6 @@ function MarketPanel() {
         </div>
       ) : (
         <div className="space-y-4">
-          {markets.length === 0 ? (
-            <p className="text-sm text-ardoise-500">Aucun marché enregistré. Ajoutez une ligne pour commencer.</p>
-          ) : null}
           {markets.map((m, idx) => (
             <div key={m.id} className="rounded-2xl border border-creme-200 bg-white p-5 shadow-sm">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

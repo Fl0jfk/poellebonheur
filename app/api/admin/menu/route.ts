@@ -12,6 +12,9 @@ type MenuItem = {
   photo_url?: string | null;
   category: string;
   price_info?: string | null;
+  partner_name?: string | null;
+  partner_url?: string | null;
+  partner_logo_url?: string | null;
 };
 type MenuData = { items: MenuItem[] };
 
@@ -43,6 +46,7 @@ function menuWithRewrittenPhotos(data: MenuData, st: StorageContext): MenuData {
     items: (data.items || []).map((it) => ({
       ...it,
       photo_url: rewriteUploadPhotoUrl(it.photo_url, st.bucket, st.region),
+      partner_logo_url: rewriteUploadPhotoUrl(it.partner_logo_url, st.bucket, st.region),
     })),
   };
 }
@@ -119,6 +123,9 @@ export async function POST(req: Request) {
     photo_url?: string | null;
     category?: string;
     price_info?: string | null;
+    partner_name?: string | null;
+    partner_url?: string | null;
+    partner_logo_url?: string | null;
     content_type?: string;
   };
   const action = body.action || "list";
@@ -148,6 +155,9 @@ export async function POST(req: Request) {
       category: body.category?.trim() || "starter",
       photo_url: body.photo_url?.trim() || null,
       price_info: null,
+      partner_name: body.partner_name?.trim() || null,
+      partner_url: body.partner_url?.trim() || null,
+      partner_logo_url: body.partner_logo_url?.trim() || null,
     };
     const next = { items: [item, ...(menu.items || [])] };
     await saveMenu(st, next);

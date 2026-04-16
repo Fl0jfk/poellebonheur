@@ -8,7 +8,7 @@ export function Footer() {
         <div className="mb-12 grid grid-cols-1 gap-12 md:grid-cols-3">
           <div className="flex flex-col items-start gap-4">
             <div className="flex items-center gap-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+
               <Image
                 src="/Logo.png"
                 alt="La Poêlée du Bonheur"
@@ -40,7 +40,7 @@ export function Footer() {
                   href="/#about"
                   className="font-body text-sm text-ardoise-400 transition-colors hover:text-safran-400"
                 >
-                  Notre histoire
+                  Qui sommes-nous ?
                 </Link>
               </li>
               <li>

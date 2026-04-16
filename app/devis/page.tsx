@@ -11,8 +11,27 @@ type MenuItem = {
   description: string;
   photo_url?: string | null;
   category: string;
+  partner_name?: string | null;
+  partner_url?: string | null;
+  partner_logo_url?: string | null;
 };
 type MenuData = { items: MenuItem[] };
+type QuotePayload = {
+  last_name: string;
+  first_name: string;
+  phone: string;
+  email: string;
+  event_date: string;
+  event_place: string;
+  number_of_people: number;
+  starters: string[];
+  starters_labels: string[];
+  main_dish: string;
+  main_dish_label: string;
+  desserts: string[];
+  desserts_labels: string[];
+  message?: string;
+};
 
 function menuJsonUrl() {return "/api/public/menu";}
 
@@ -39,6 +58,14 @@ async function sendDevis(body: Record<string, unknown>) {
     const text = await r.text();
     throw new Error(text || `Erreur HTTP ${r.status}`);
   }
+}
+
+function buildNameMap(items: MenuItem[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const item of items) {
+    if (item.id) out[item.id] = item.name;
+  }
+  return out;
 }
 
 function PickTile({
@@ -84,6 +111,30 @@ function PickTile({
           <span className="line-clamp-3 font-body text-[11px] leading-snug text-ardoise-500 sm:text-xs">
             {item.description}
           </span>
+        ) : null}
+        {normalizeMenuCategory(item.category) === "main_dish" &&
+        item.partner_url?.trim() &&
+        item.partner_name?.trim() ? (
+          <a
+            href={item.partner_url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold text-bordeaux-700 underline decoration-bordeaux-300 underline-offset-2"
+          >
+            {item.partner_logo_url?.trim() ? (
+              <Image
+                src={item.partner_logo_url}
+                alt={item.partner_name}
+                width={14}
+                height={14}
+                className="h-[14px] w-[14px] rounded-full object-cover"
+              />
+            ) : (
+              <span aria-hidden>🤝</span>
+            )}
+            Partenaire : {item.partner_name}
+          </a>
         ) : null}
       </div>
     </button>
@@ -137,8 +188,12 @@ export default function DevisPage() {
     }
     setSubmitting(true);
     setErrorMsg(null);
+    const namesById = buildNameMap(data?.items ?? []);
+    const startersLabels = starters.map((id) => namesById[id]).filter(Boolean);
+    const dessertsLabels = desserts.map((id) => namesById[id]).filter(Boolean);
+    const mainDishLabel = namesById[mainDish] || "";
     try {
-      await sendDevis({
+      const payload: QuotePayload = {
         last_name: lastName,
         first_name: firstName,
         phone,
@@ -147,10 +202,14 @@ export default function DevisPage() {
         event_place: eventPlace,
         number_of_people: n,
         starters,
+        starters_labels: startersLabels,
         main_dish: mainDish,
+        main_dish_label: mainDishLabel,
         desserts,
+        desserts_labels: dessertsLabels,
         message: message.trim() ? message : undefined,
-      });
+      };
+      await sendDevis(payload);
       setSuccess(true);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Erreur d’envoi");

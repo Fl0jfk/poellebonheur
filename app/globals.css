@@ -21,9 +21,13 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
   body {
     @apply bg-creme-50 text-ardoise-800 font-body antialiased;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
   h1,
   h2,
@@ -34,6 +38,11 @@
   h5 {
     @apply font-hand font-bold;
   }
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
 }
 
 @layer components {
@@ -78,83 +87,173 @@
   }
 }
 
-/* Collage slider (React state driven) */
 .collage-slider {
   position: relative;
-  width: min(96vw, 920px);
+  width: min(94vw, 920px);
   margin: 0 auto;
+  padding-inline: 0;
+  overflow: visible;
 }
 .collage-stage {
   position: relative;
-  height: clamp(280px, 52vw, 620px);
-  overflow: hidden;
+  width: min(96vw, 920px);
+  height: clamp(320px, 58vw, 500px);
+  margin: 0 auto;
+  overflow: visible;
 }
-.collage-card {
+.pan-card {
   position: absolute;
   top: 50%;
   left: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.92);
-  border-radius: 18px;
-  overflow: hidden;
-  transition: transform 0.5s ease, opacity 0.35s ease;
-  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.45);
+  width: min(84vw, 540px);
+  height: clamp(320px, 58vw, 460px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.6s ease, opacity 0.4s ease;
 }
-.collage-card.active {
-  width: min(78vw, 360px);
-  height: min(54vw, 280px);
+.pan-card.active {
   transform: translate(-50%, -50%) scale(1);
   opacity: 1;
   z-index: 3;
 }
-.collage-card.prev {
-  width: min(56vw, 230px);
-  height: min(40vw, 170px);
-  transform: translate(calc(-50% - 185px), -50%) rotate(-9deg);
-  opacity: 0.78;
+.pan-card.prev {
+  transform: translate(calc(-50% - 230px), -50%) rotate(-8deg) scale(0.72);
+  opacity: 0.82;
   z-index: 2;
 }
-.collage-card.next {
-  width: min(56vw, 230px);
-  height: min(40vw, 170px);
-  transform: translate(calc(-50% + 185px), -50%) rotate(9deg);
-  opacity: 0.78;
+.pan-card.next {
+  transform: translate(calc(-50% + 230px), -50%) rotate(8deg) scale(0.72);
+  opacity: 0.82;
   z-index: 2;
 }
-.collage-card.hidden-card {
+.pan-card.hidden-card {
+  transform: translate(-50%, -50%) scale(0.65);
   opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.9);
   z-index: 1;
+  pointer-events: none;
+  visibility: hidden;
+}
+.pan-bowl {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+  overflow: visible;
+  border: clamp(10px, 1.2vw, 14px) solid #15181d;
+  border-radius: 50%;
+  background: #0d0f14;
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.42);
+}
+.pan-bowl::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  z-index: 3;
+  pointer-events: none;
+}
+.pan-bowl::after {
+  content: none;
+}
+.pan-inner {
+  position: absolute;
+  inset: 13px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #111827;
+  z-index: 2;
+}
+.furry-image {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  z-index: 1;
+  transition: opacity 0.8s ease-in-out;
+}
+.furry-image.active {
+  opacity: 1;
+  z-index: 2;
+}
+.pan-handle {
+  position: absolute;
+  top: 50%;
+  width: clamp(64px, 9vw, 92px);
+  height: clamp(36px, 5.2vw, 48px);
+  transform: translateY(-50%);
+  border: clamp(5px, 0.75vw, 7px) solid #181b21;
+  border-radius: 14px;
+  background: transparent;
+  box-shadow:
+    0 5px 10px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  z-index: 1;
+  pointer-events: none;
+}
+.pan-handle-left {
+  left: calc(clamp(64px, 9vw, 92px) * -0.72);
+}
+.pan-handle-right {
+  right: calc(clamp(64px, 9vw, 92px) * -0.72);
 }
 @media (max-width: 640px) {
   .collage-slider {
     width: 100vw;
     margin-left: calc(50% - 50vw);
     margin-right: calc(50% - 50vw);
+    padding-inline: 0;
   }
   .collage-stage {
-    height: 72vw;
+    width: 100%;
+    height: clamp(280px, 72vw, 410px);
   }
-  .collage-card.active {
-    width: 82vw;
-    height: 58vw;
+  .pan-card {
+    width: min(80vw, 360px);
+    height: clamp(280px, 72vw, 390px);
   }
-  .collage-card.prev {
-    width: 50vw;
-    height: 35vw;
-    transform: translate(calc(-50% - 120px), -50%) rotate(-9deg);
+  .pan-card.prev {
+    transform: translate(calc(-50% - 126px), -50%) rotate(-7deg) scale(0.66);
   }
-  .collage-card.next {
-    width: 50vw;
-    height: 35vw;
-    transform: translate(calc(-50% + 120px), -50%) rotate(9deg);
+  .pan-card.next {
+    transform: translate(calc(-50% + 126px), -50%) rotate(7deg) scale(0.66);
+  }
+  .pan-bowl::after {
+    content: none;
+  }
+  .pan-handle {
+    width: 56px;
+    height: 30px;
+    border-width: 5px;
+    border-radius: 12px;
+  }
+  .pan-handle-left {
+    left: -40px;
+  }
+  .pan-handle-right {
+    right: -40px;
   }
 }
-
-/* Desktop : les cartes font ~170–280px de haut ; un stage à 620px laissait d’énormes marges vides */
+@media (max-width: 1024px) {
+  .collage-slider {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding-inline: 0;
+  }
+  .collage-stage {
+    width: 100vw;
+  }
+}
 @media (min-width: 641px) {
   .collage-stage {
-    /* ≥ hauteur max d’une carte active (280px) + marge pour ombre / léger débord */
-    height: clamp(288px, 30vw, 360px);
+    height: clamp(340px, 38vw, 500px);
+  }
+  .pan-card {
+    height: clamp(340px, 38vw, 470px);
   }
 }

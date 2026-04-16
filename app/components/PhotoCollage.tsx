@@ -41,6 +41,13 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
     if (photos.length === 0) return;
     setActive((a) => (a >= photos.length ? 0 : a));
   }, [photos.length]);
+  useEffect(() => {
+    if (photos.length < 2) return;
+    const id = window.setInterval(() => {
+      setActive((a) => (a + 1) % photos.length);
+    }, 3600);
+    return () => window.clearInterval(id);
+  }, [photos.length]);
   const near = useMemo(() => {
     if (photos.length === 0) return { prev: 0, next: 0 };
     const prev = (active - 1 + photos.length) % photos.length;
@@ -71,13 +78,29 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
     <div className={"collage-slider " + bannerSpacing}>
       <div className="collage-stage">
         {photos.map((p, i) => {
-          const cls = i === active ? "collage-card active" : i === near.prev ? "collage-card prev" : i === near.next ? "collage-card next" : "collage-card hidden-card";
+          const cls =
+            i === active
+              ? "pan-card active"
+              : i === near.prev
+                ? "pan-card prev"
+                : i === near.next
+                  ? "pan-card next"
+                  : "pan-card hidden-card";
           return (
             <button key={p.id} type="button" className={cls} onClick={() => setActive(i)} aria-label={p.alt}>
-              <Image src={p.src} alt={p.alt} fill className="h-full w-full object-cover" />
+              <div className="pan-bowl">
+                <div className="pan-handle pan-handle-left" aria-hidden />
+                <div className="pan-handle pan-handle-right" aria-hidden />
+                <div className="pan-inner">
+                  <Image src={p.src} alt={p.alt} fill priority={i === active} className="h-full w-full object-cover" />
+                </div>
+              </div>
             </button>
           );
         })}
+        <div className="sr-only" aria-live="polite">
+          Photo {active + 1} sur {photos.length}
+        </div>
       </div>
     </div>
   );

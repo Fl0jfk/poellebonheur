@@ -65,7 +65,7 @@ export function Navbar({ announcement }: NavbarProps) {
                     href="/#about"
                     className="font-body text-sm font-semibold text-ardoise-700 transition-colors hover:text-bordeaux-700"
                   >
-                    Notre histoire
+                    Qui sommes-nous ?
                   </Link>
                 </li>
                 <li>
@@ -123,7 +123,7 @@ export function Navbar({ announcement }: NavbarProps) {
           <Link
             href="/#about"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-4 rounded-2xl px-5 py-4 font-body text-lg font-semibold text-ardoise-800 no-underline transition-colors hover:bg-creme-100"
+            className="flex items-center gap-4 rounded-2xl px-5 py-4 font-display text-2xl font-semibold text-ardoise-800 no-underline transition-colors hover:bg-creme-100"
           >
             <span className="text-2xl">🏡</span>
             Notre histoire
@@ -131,7 +131,7 @@ export function Navbar({ announcement }: NavbarProps) {
           <Link
             href="/#menu"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-4 rounded-2xl px-5 py-4 font-body text-lg font-semibold text-ardoise-800 no-underline transition-colors hover:bg-creme-100"
+            className="flex items-center gap-4 rounded-2xl px-5 py-4 font-display text-2xl font-semibold text-ardoise-800 no-underline transition-colors hover:bg-creme-100"
           >
             <span className="text-2xl">🥘</span>
             Nos plats
@@ -139,7 +139,7 @@ export function Navbar({ announcement }: NavbarProps) {
           <Link
             href="/devis"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-4 rounded-2xl px-5 py-4 font-body text-lg font-semibold text-ardoise-800 no-underline transition-colors hover:bg-creme-100"
+            className="flex items-center gap-4 rounded-2xl px-5 py-4 font-display text-2xl font-semibold text-ardoise-800 no-underline transition-colors hover:bg-creme-100"
           >
             <span className="text-2xl">🍽️</span>
             Demander un devis
@@ -150,7 +150,7 @@ export function Navbar({ announcement }: NavbarProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-4 rounded-2xl px-5 py-4 font-body text-lg font-semibold text-ardoise-800 no-underline transition-colors hover:bg-blue-50"
+            className="flex items-center gap-4 rounded-2xl px-5 py-4 font-display text-2xl font-semibold text-ardoise-800 no-underline transition-colors hover:bg-blue-50"
           >
             <span className="text-2xl">📘</span>
             Facebook
@@ -158,7 +158,7 @@ export function Navbar({ announcement }: NavbarProps) {
           <a
             href="tel:0745852654"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-4 rounded-2xl bg-bordeaux-50 px-5 py-4 font-body text-lg font-semibold text-bordeaux-700 no-underline transition-colors hover:bg-bordeaux-100"
+            className="flex items-center gap-4 rounded-2xl bg-bordeaux-50 px-5 py-4 font-display text-2xl font-semibold text-bordeaux-700 no-underline transition-colors hover:bg-bordeaux-100"
           >
             <span className="text-2xl">📞</span>
             07.45.85.26.54
