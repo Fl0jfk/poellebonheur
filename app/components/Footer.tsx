@@ -28,6 +28,10 @@ export function Footer() {
             <div className="flex flex-wrap gap-2">
               <span className="tag bg-bordeaux-700/30 text-bordeaux-300">🥘 Paella</span>
               <span className="tag bg-safran-500/20 text-safran-400">🦐 Fruits de mer</span>
+              <span className="tag bg-bordeaux-100 text-bordeaux-700">🥘 Poêlées variées</span>
+              <span className="tag bg-safran-100 text-safran-700">🥗 Entrées maison</span>
+              <span className="tag bg-creme-200 text-ardoise-700">🍮 Desserts maison</span>
+              <span className="tag bg-creme-200 text-ardoise-700">🌿 Produits frais</span>
             </div>
           </div>
           <div>
@@ -83,7 +87,7 @@ export function Footer() {
           </div>
         </div>
         <div className="border-t border-white/10 pt-6 text-center font-body text-xs text-ardoise-600">
-          © {new Date().getFullYear()} La Poêlée du Bonheur — Site réalisé avec ❤️ (Next.js).
+          © {new Date().getFullYear()} La Poêlée du Bonheur.
         </div>
       </div>
     </footer>
