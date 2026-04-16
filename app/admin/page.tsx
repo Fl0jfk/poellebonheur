@@ -102,6 +102,25 @@ async function createMenuItem(payload: {
   if (!r.ok) throw new Error(text || `HTTP ${r.status}`);
 }
 
+async function updateMenuItem(payload: {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  photo_url?: string | null;
+  partner_name?: string | null;
+  partner_url?: string | null;
+  partner_logo_url?: string | null;
+}) {
+  const r = await fetch("/api/admin/menu", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...adminHeaders() },
+    body: JSON.stringify({ action: "update", ...payload }),
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(text || `HTTP ${r.status}`);
+}
+
 async function deleteMenuItem(id: string) {
   const r = await fetch("/api/admin/menu", {
     method: "POST",
@@ -397,6 +416,7 @@ function QuotesPanel() {
 function MenuPanel() {
   const [gen, setGen] = useState(0);
   const [menu, setMenu] = useState<MenuData | null | undefined>(undefined);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("starter");
@@ -409,6 +429,35 @@ function MenuPanel() {
   const [menuOk, setMenuOk] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const menuPhotoFileRef = useRef<HTMLInputElement>(null);
+
+  function resetForm() {
+    setEditingId(null);
+    setName("");
+    setDescription("");
+    setCategory("starter");
+    setPhotoUrl("");
+    setPartnerName("");
+    setPartnerUrl("");
+    setPartnerLogoUrl("");
+    setPhotoNote(null);
+    setFormError(null);
+    if (menuPhotoFileRef.current) menuPhotoFileRef.current.value = "";
+  }
+
+  function startEdit(item: MenuItem) {
+    setEditingId(item.id);
+    setName(item.name || "");
+    setDescription(item.description || "");
+    setCategory(item.category || "starter");
+    setPhotoUrl(item.photo_url || "");
+    setPartnerName(item.partner_name || "");
+    setPartnerUrl(item.partner_url || "");
+    setPartnerLogoUrl(item.partner_logo_url || "");
+    setPhotoNote(item.photo_url ? "Photo actuelle chargée." : null);
+    setFormError(null);
+    setMenuOk(null);
+    if (menuPhotoFileRef.current) menuPhotoFileRef.current.value = "";
+  }
 
   const reload = useCallback(async () => {
     setMenu(undefined);
@@ -446,7 +495,7 @@ function MenuPanel() {
     setFormError(null);
     setMenuOk(null);
     try {
-      await createMenuItem({
+      const payload = {
         name: nameTrim,
         description: description.trim(),
         category,
@@ -454,16 +503,16 @@ function MenuPanel() {
         partner_name: partnerName.trim() || null,
         partner_url: partnerUrl.trim() || null,
         partner_logo_url: partnerLogoUrl.trim() || null,
-      });
-      setName("");
-      setDescription("");
-      setPhotoUrl("");
-      setPartnerName("");
-      setPartnerUrl("");
-      setPartnerLogoUrl("");
-      setPhotoNote(null);
-      if (menuPhotoFileRef.current) menuPhotoFileRef.current.value = "";
-      setMenuOk("Plat enregistré.");
+      };
+      if (editingId) {
+        await updateMenuItem({ id: editingId, ...payload });
+        setMenuOk("Plat modifié.");
+      } else {
+        await createMenuItem(payload);
+        setMenuOk("Plat enregistré.");
+      }
+      resetForm();
+      setMenuOk(editingId ? "Plat modifié." : "Plat enregistré.");
       setGen((g) => g + 1);
       localStorage.setItem(TAB_KEY, "menu");
     } catch (err) {
@@ -474,6 +523,7 @@ function MenuPanel() {
 
   async function onDelete(id: string) {
     try {
+      if (editingId === id) resetForm();
       await deleteMenuItem(id);
       setGen((g) => g + 1);
     } catch {
@@ -486,7 +536,16 @@ function MenuPanel() {
   return (
     <div className="space-y-10 pb-16">
       <div className="rounded-2xl border border-creme-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-5 font-display text-xl text-ardoise-900">Ajouter un plat</h2>
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-display text-xl text-ardoise-900">
+            {editingId ? "Modifier le plat" : "Ajouter un plat"}
+          </h2>
+          {editingId ? (
+            <button type="button" className="btn btn-ghost px-4 py-2 text-sm" onClick={resetForm}>
+              Annuler la modification
+            </button>
+          ) : null}
+        </div>
         <form noValidate className="space-y-4" onSubmit={onSubmit}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -553,7 +612,7 @@ function MenuPanel() {
           {menuOk ? <p className="text-sm font-medium text-green-700">{menuOk}</p> : null}
           {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
           <button type="submit" disabled={saving} className="btn btn-safran px-6">
-            {saving ? "Ajout..." : "Ajouter le plat"}
+            {saving ? (editingId ? "Modification..." : "Ajout...") : editingId ? "Enregistrer les modifications" : "Ajouter le plat"}
           </button>
         </form>
       </div>
@@ -574,30 +633,47 @@ function MenuPanel() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-creme-200 bg-white px-5 py-4"
+                className={`flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4 transition-colors ${
+                  editingId === item.id
+                    ? "border-bordeaux-400 ring-2 ring-bordeaux-100"
+                    : "border-creme-200 hover:border-bordeaux-200"
+                }`}
               >
-                {item.photo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.photo_url}
-                    alt=""
-                    className="h-16 w-16 flex-shrink-0 rounded-lg border border-creme-100 object-cover sm:h-20 sm:w-20"
-                  />
-                ) : null}
-                <div className="min-w-0 flex-1">
-                  <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-ardoise-900">{item.name}</span>
-                    <span className="tag bg-creme-100 text-xs text-ardoise-600">
-                      {categoryLabel(normalizeMenuCategory(item.category))}
-                    </span>
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-4 text-left"
+                  onClick={() => startEdit(item)}
+                >
+                  {item.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.photo_url}
+                      alt=""
+                      className="h-16 w-16 flex-shrink-0 rounded-lg border border-creme-100 object-cover sm:h-20 sm:w-20"
+                    />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                      <span className="font-medium text-ardoise-900">{item.name}</span>
+                      <span className="tag bg-creme-100 text-xs text-ardoise-600">
+                        {categoryLabel(normalizeMenuCategory(item.category))}
+                      </span>
+                      {item.partner_name ? (
+                        <span className="tag bg-safran-100 text-xs text-safran-700">Partenaire</span>
+                      ) : null}
+                    </div>
+                    <p className="truncate text-sm text-ardoise-500">{item.description}</p>
+                    <p className="mt-1 text-xs text-bordeaux-600">Cliquer pour modifier</p>
                   </div>
-                  <p className="truncate text-sm text-ardoise-500">{item.description}</p>
-                </div>
+                </button>
                 <button
                   type="button"
                   title="Supprimer"
                   className="flex-shrink-0 rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                  onClick={() => onDelete(item.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void onDelete(item.id);
+                  }}
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path

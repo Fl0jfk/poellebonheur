@@ -116,7 +116,7 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json()) as {
-    action?: "list" | "create" | "delete" | "presign_photo";
+    action?: "list" | "create" | "update" | "delete" | "presign_photo";
     id?: string;
     name?: string;
     description?: string;
@@ -169,6 +169,35 @@ export async function POST(req: Request) {
     const next = { items: (menu.items || []).filter((x) => x.id !== body.id) };
     await saveMenu(st, next);
     return NextResponse.json({ ok: true });
+  }
+
+  if (action === "update") {
+    if (!body.id) return NextResponse.json({ error: "id requis" }, { status: 400 });
+    if (!body.name?.trim()) {
+      return NextResponse.json({ error: "Nom requis" }, { status: 400 });
+    }
+    const existing = (menu.items || []).find((x) => x.id === body.id);
+    if (!existing) {
+      return NextResponse.json({ error: "Plat introuvable" }, { status: 404 });
+    }
+    const next = {
+      items: (menu.items || []).map((item) =>
+        item.id === body.id
+          ? {
+              ...item,
+              name: body.name?.trim() || item.name,
+              description: body.description?.trim() || "",
+              category: body.category?.trim() || "starter",
+              photo_url: body.photo_url?.trim() || null,
+              partner_name: body.partner_name?.trim() || null,
+              partner_url: body.partner_url?.trim() || null,
+              partner_logo_url: body.partner_logo_url?.trim() || null,
+            }
+          : item,
+      ),
+    };
+    await saveMenu(st, next);
+    return NextResponse.json({ ok: true, id: body.id });
   }
 
   return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
