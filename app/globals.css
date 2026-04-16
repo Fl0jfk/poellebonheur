@@ -23,11 +23,13 @@
     scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    overflow-x: hidden;
   }
   body {
     @apply bg-creme-50 text-ardoise-800 font-body antialiased;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    overflow-x: hidden;
   }
   h1,
   h2,
@@ -92,14 +94,14 @@ body::-webkit-scrollbar {
   width: min(94vw, 920px);
   margin: 0 auto;
   padding-inline: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 .collage-stage {
   position: relative;
   width: min(96vw, 920px);
   height: clamp(320px, 58vw, 500px);
   margin: 0 auto;
-  overflow: visible;
+  overflow: hidden;
 }
 .pan-card {
   position: absolute;
