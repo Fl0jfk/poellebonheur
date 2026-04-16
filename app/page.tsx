@@ -149,7 +149,7 @@ export default function HomePage() {
           >
             <PhotoCollage hasMarketBanner={visibleMarkets.length > 0} />
           </div>
-          <div className="pb-4 mt-12">
+          <div className="mt-6 pb-4 md:mt-8">
             <h1 className="mb-4 font-display text-5xl text-white drop-shadow-lg md:text-7xl">
               La Poêlée
               <br />
