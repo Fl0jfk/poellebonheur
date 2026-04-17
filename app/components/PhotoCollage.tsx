@@ -10,11 +10,25 @@ type PhotoCollageProps = {hasMarketBanner?: boolean};
 export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
   const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState<CollagePhoto[]>([]);
+  const [instantPhoto, setInstantPhoto] = useState<CollagePhoto | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const cached = window.localStorage.getItem("hero-collage-first-photo");
+      if (!cached) return;
+      const parsed = JSON.parse(cached) as CollagePhoto;
+      if (parsed?.src) setInstantPhoto(parsed);
+    } catch {
+      // Ignore invalid cache payloads.
+    }
+  }, []);
+
   useEffect(() => {
     let ok = true;
     (async () => {
       try {
-        const r = await fetch("/api/public/collage", { cache: "no-store" });
+        const r = await fetch("/api/public/collage", { cache: "force-cache" });
         if (!ok) return;
         if (!r.ok) {
           setPhotos([]);
@@ -26,6 +40,12 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
           : [];
         const list = raw.slice(0, 8);
         setPhotos(list.length >= 5 ? list : []);
+        if (list[0]?.src) {
+          setInstantPhoto(list[0]);
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem("hero-collage-first-photo", JSON.stringify(list[0]));
+          }
+        }
       } catch {
         if (ok) setPhotos([]);
       } finally {
@@ -56,6 +76,33 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
   }, [active, photos.length]);
   const bannerSpacing = hasMarketBanner ? "max-sm:mt-5 sm:mt-0" : "";
   if (loading) {
+    if (instantPhoto) {
+      return (
+        <div className={"collage-slider " + bannerSpacing}>
+          <div className="collage-stage">
+            <div className="pan-card active">
+              <div className="pan-bowl">
+                <div className="pan-handle pan-handle-left" aria-hidden />
+                <div className="pan-handle pan-handle-right" aria-hidden />
+                <div className="pan-inner">
+                  <Image
+                    src={instantPhoto.src}
+                    alt={instantPhoto.alt || "Photo de présentation"}
+                    fill
+                    priority
+                    quality={30}
+                    className="h-full w-full scale-[1.03] object-cover blur-[3px]"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="sr-only" aria-live="polite">
+              Aperçu photo en chargement
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div
         className={

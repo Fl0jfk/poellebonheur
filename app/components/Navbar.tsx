@@ -146,7 +146,7 @@ export function Navbar({ announcement }: NavbarProps) {
           </Link>
           <div className="my-2 border-t border-ardoise-100/60" />
           <a
-            href="https://www.facebook.com/people/La-Po%C3%AAl%C3%A9e-du-Bonheur/61572905885666/"
+            href="https://www.facebook.com/people/La-po%C3%AAl%C3%A9e-du-bonheur/61587706023651/"
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setMenuOpen(false)}

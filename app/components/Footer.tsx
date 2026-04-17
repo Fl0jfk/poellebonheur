@@ -83,6 +83,16 @@ export function Footer() {
                   ✉️ lapoeleedubonheur@gmail.com
                 </a>
               </li>
+              <li>
+                <a
+                  href="https://www.facebook.com/people/La-po%C3%AAl%C3%A9e-du-bonheur/61587706023651/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 font-body text-sm text-ardoise-400 transition-colors hover:text-safran-400"
+                >
+                  📘 Facebook
+                </a>
+              </li>
             </ul>
           </div>
         </div>
