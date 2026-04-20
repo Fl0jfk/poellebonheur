@@ -25,7 +25,6 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
       // Ignore invalid cache payloads.
     }
   }, []);
-
   useEffect(() => {
     let ok = true;
     (async () => {
@@ -42,9 +41,7 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
         setPhotos(list.length >= 5 ? list : []);
         if (list[0]?.src) {
           setInstantPhoto(list[0]);
-          if (typeof window !== "undefined") {
-            window.localStorage.setItem("hero-collage-first-photo", JSON.stringify(list[0]));
-          }
+          if (typeof window !== "undefined") { window.localStorage.setItem("hero-collage-first-photo", JSON.stringify(list[0]))}
         }
       } catch {
         if (ok) setPhotos([]);
@@ -52,9 +49,7 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
         if (ok) setLoading(false);
       }
     })();
-    return () => {
-      ok = false;
-    };
+    return () => { ok = false};
   }, []);
   const [active, setActive] = useState(0);
   useEffect(() => {
@@ -63,9 +58,7 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
   }, [photos.length]);
   useEffect(() => {
     if (photos.length < 2) return;
-    const id = window.setInterval(() => {
-      setActive((a) => (a + 1) % photos.length);
-    }, 3600);
+    const id = window.setInterval(() => { setActive((a) => (a + 1) % photos.length)}, 3600);
     return () => window.clearInterval(id);
   }, [photos.length]);
   const near = useMemo(() => {
@@ -100,61 +93,31 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
                 </div>
               </div>
             </div>
-            <div className="sr-only" aria-live="polite">
-              Aperçu photo en chargement
-            </div>
+            <div className="sr-only" aria-live="polite">Aperçu photo en chargement</div>
           </div>
         </div>
       );
     }
     return (
-      <div
-        className={
-          "collage-slider flex min-h-[min(52vw,280px)] w-full items-center justify-center sm:min-h-[clamp(288px,30vw,360px)] " +
-          bannerSpacing
-        }
-      >
-        <div
-          className="h-11 w-11 animate-spin rounded-full border-4 border-white/40 border-t-white"
-          aria-hidden
-        />
+      <div className={"collage-slider flex min-h-[min(52vw,280px)] w-full items-center justify-center sm:min-h-[clamp(288px,30vw,360px)] " + bannerSpacing}>
+        <div className="h-11 w-11 animate-spin rounded-full border-4 border-white/40 border-t-white" aria-hidden/>
         <span className="sr-only">Chargement du collage</span>
       </div>
     );
   }
-  if (photos.length === 0) {
-    return null;
-  }
+  if (photos.length === 0) { return null}
   return (
     <div className={"collage-slider " + bannerSpacing}>
       <div className="collage-stage">
         {photos.map((p, i) => {
-          const cls =
-            i === active
-              ? "pan-card active"
-              : i === near.prev
-                ? "pan-card prev"
-                : i === near.next
-                  ? "pan-card next"
-                  : "pan-card hidden-card";
+          const cls = i === active ? "pan-card active" : i === near.prev ? "pan-card prev" : i === near.next ? "pan-card next" : "pan-card hidden-card";
           return (
             <button key={p.id} type="button" className={cls} onClick={() => setActive(i)} aria-label={p.alt}>
               <div className="pan-bowl">
                 <div className="pan-handle pan-handle-left" aria-hidden />
                 <div className="pan-handle pan-handle-right" aria-hidden />
                 <div className="pan-inner">
-                  <Image
-                    src={p.src}
-                    alt={p.alt}
-                    fill
-                    priority={i === active}
-                    unoptimized={isProxiedMedia(p.src)}
-                    quality={70}
-                    sizes="(max-width: 768px) 88vw, 720px"
-                    placeholder="blur"
-                    blurDataURL={blurDataURL}
-                    className="h-full w-full object-cover"
-                  />
+                  <Image src={p.src} alt={p.alt} fill priority={i === active} unoptimized={isProxiedMedia(p.src)} quality={70} sizes="(max-width: 768px) 88vw, 720px" placeholder="blur" blurDataURL={blurDataURL} className="h-full w-full object-cover"/>
                 </div>
               </div>
             </button>

@@ -8,13 +8,7 @@ export function Footer() {
         <div className="mb-12 grid grid-cols-1 gap-12 md:grid-cols-3">
           <div className="flex flex-col items-start gap-4">
             <div className="flex items-center gap-4">
-
-              <Image
-                src="/Logo.png"
-                alt="La Poêlée du Bonheur"
-                width={90}
-                height={90}
-              />
+              <Image src="/Logo.png" alt="La Poêlée du Bonheur" width={90} height={90}/>
               <p className="font-display text-2xl leading-tight text-white">
                 La Poêlée
                 <br />
@@ -26,8 +20,6 @@ export function Footer() {
               avec amour.
             </p>
             <div className="flex flex-wrap gap-2">
-              <span className="tag bg-bordeaux-700/30 text-bordeaux-300">🥘 Paella</span>
-              <span className="tag bg-safran-500/20 text-safran-400">🦐 Fruits de mer</span>
               <span className="tag bg-bordeaux-100 text-bordeaux-700">🥘 Poêlées variées</span>
               <span className="tag bg-safran-100 text-safran-700">🥗 Entrées maison</span>
               <span className="tag bg-creme-200 text-ardoise-700">🍮 Desserts maison</span>
@@ -96,9 +88,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="border-t border-white/10 pt-6 text-center font-body text-xs text-ardoise-600">
-          © {new Date().getFullYear()} La Poêlée du Bonheur.
-        </div>
+        <div className="border-t border-white/10 pt-6 text-center font-body text-xs text-ardoise-600"> © {new Date().getFullYear()} La Poêlée du Bonheur.</div>
       </div>
     </footer>
   );

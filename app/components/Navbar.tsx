@@ -69,17 +69,10 @@ export function Navbar({ announcement }: NavbarProps) {
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/#menu"
-                    className="font-body text-sm font-semibold text-ardoise-700 transition-colors hover:text-bordeaux-700"
-                  >
-                    Nos plats
-                  </Link>
+                  <Link href="/#menu" className="font-body text-sm font-semibold text-ardoise-700 transition-colors hover:text-bordeaux-700">Nos plats</Link>
                 </li>
                 <li>
-                  <Link href="/devis" className="btn btn-safran px-5 py-2 text-sm">
-                    🍽️ Réserver
-                  </Link>
+                  <Link href="/devis" className="btn btn-safran px-5 py-2 text-sm">🍽️ Réserver</Link>
                 </li>
               </ul>
               <button
@@ -165,13 +158,7 @@ export function Navbar({ announcement }: NavbarProps) {
           </a>
         </div>
         <div className="shrink-0 border-t border-ardoise-100/40 px-6 py-6">
-          <Link
-            href="/devis"
-            onClick={() => setMenuOpen(false)}
-            className="btn btn-safran flex w-full justify-center py-4 text-base"
-          >
-            🍽️ Réserver un événement
-          </Link>
+          <Link href="/devis" onClick={() => setMenuOpen(false)} className="btn btn-safran flex w-full justify-center py-4 text-base">🍽️ Réserver un événement</Link>
         </div>
       </div>
     </nav>
