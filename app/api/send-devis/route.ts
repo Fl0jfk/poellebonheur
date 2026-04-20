@@ -94,6 +94,86 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+function createEmailLayout(params: {
+  title: string;
+  intro: string;
+  infoRowsHtml: string;
+  menuRowsHtml: string;
+  messageHtml: string;
+  footerNote?: string;
+}) {
+  const logoUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+    ? `${process.env.NEXT_PUBLIC_SITE_URL.trim().replace(/\/$/, "")}/Logo.png`
+    : "";
+  const safeLogoUrl = escapeHtml(logoUrl);
+  const footerNote = params.footerNote
+    ? `<p style="margin: 0; color: #5f3e1f; font-size: 13px;">${escapeHtml(params.footerNote)}</p>`
+    : "";
+
+  return `
+    <div style="margin:0; padding:0; background:#fff7f0; font-family: Arial, Helvetica, sans-serif; color:#2c1c0f;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="padding:24px 10px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="640" style="width:100%; max-width:640px; background:#ffffff; border-radius:16px; border:1px solid #f3dcc8; overflow:hidden;">
+              <tr>
+                <td style="padding:24px; background:linear-gradient(135deg, #ffedd5, #ffe4cc); border-bottom:1px solid #f3dcc8;">
+                  ${
+                    safeLogoUrl
+                      ? `<img src="${safeLogoUrl}" alt="Logo La Poêlée du Bonheur" width="120" style="display:block; margin:0 auto 12px auto;" />`
+                      : ""
+                  }
+                  <p style="margin:0; text-align:center; color:#92400e; font-size:13px; letter-spacing:0.04em; text-transform:uppercase;">La Poêlée du Bonheur</p>
+                  <h1 style="margin:10px 0 0 0; text-align:center; font-size:24px; line-height:1.3; color:#7c2d12;">${escapeHtml(params.title)}</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px;">
+                  <p style="margin:0 0 18px 0; font-size:15px; line-height:1.6; color:#3f2a17;">${escapeHtml(params.intro)}</p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px; background:#fffbf8; border:1px solid #f6e5d6; border-radius:12px;">
+                    <tr>
+                      <td style="padding:14px 16px;">
+                        <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#9a3412;">Informations</p>
+                        ${params.infoRowsHtml}
+                      </td>
+                    </tr>
+                  </table>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px; background:#fffbf8; border:1px solid #f6e5d6; border-radius:12px;">
+                    <tr>
+                      <td style="padding:14px 16px;">
+                        <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#9a3412;">Repas choisi</p>
+                        ${params.menuRowsHtml}
+                      </td>
+                    </tr>
+                  </table>
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fffbf8; border:1px solid #f6e5d6; border-radius:12px;">
+                    <tr>
+                      <td style="padding:14px 16px;">
+                        <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#9a3412;">Message</p>
+                        <p style="margin:0; font-size:14px; line-height:1.6; color:#3f2a17;">${params.messageHtml}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 24px; border-top:1px solid #f3dcc8; background:#fff7f0;">
+                  <p style="margin:0 0 6px 0; color:#5f3e1f; font-size:13px;">La Poêlée du Bonheur</p>
+                  ${footerNote}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+}
+
+function createInfoRow(icon: string, label: string, value: string): string {
+  return `<p style="margin:0 0 8px 0; font-size:14px; line-height:1.5;"><span style="font-size:14px; margin-right:6px;">${icon}</span><strong>${escapeHtml(label)} :</strong> ${escapeHtml(value)}</p>`;
+}
+
 function createMailer() {
   const user = process.env.SMTP_USER?.trim();
   const pass = process.env.SMTP_PASS?.trim();
@@ -120,15 +200,11 @@ async function sendQuoteEmails(quote: QuoteRequest) {
   const eventDate = quote.event_date || "Non précisée";
   const eventPlace = quote.event_place || "Non précisé";
   const message = quote.message?.trim() || "Aucun message complémentaire.";
-  const customerNameHtml = escapeHtml(customerName);
-  const emailHtml = escapeHtml(quote.email);
-  const phoneHtml = escapeHtml(quote.phone || "Non renseigné");
-  const dateHtml = escapeHtml(eventDate);
-  const placeHtml = escapeHtml(eventPlace);
-  const startersHtml = escapeHtml(starters);
-  const mainDishHtml = escapeHtml(mainDish || "Non renseigné");
-  const dessertsHtml = escapeHtml(desserts);
   const messageHtml = escapeHtml(message).replace(/\n/g, "<br />");
+  const createdAt = new Date(quote.created_at).toLocaleString("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
   const summaryText = [
     `Nom : ${customerName}`,
@@ -143,6 +219,38 @@ async function sendQuoteEmails(quote: QuoteRequest) {
     `Message : ${message}`,
   ].join("\n");
 
+  const infoRowsHtml =
+    createInfoRow("👤", "Nom", customerName || "Non renseigné") +
+    createInfoRow("✉️", "Email", quote.email) +
+    createInfoRow("📞", "Téléphone", quote.phone || "Non renseigné") +
+    createInfoRow("📅", "Date de l'événement", eventDate) +
+    createInfoRow("📍", "Lieu", eventPlace) +
+    createInfoRow("👥", "Nombre de personnes", `${quote.number_of_people || 0}`) +
+    createInfoRow("🕒", "Demande reçue le", createdAt);
+
+  const menuRowsHtml =
+    createInfoRow("🥗", "Entrées", starters) +
+    createInfoRow("🍽️", "Plat principal", mainDish || "Non renseigné") +
+    createInfoRow("🍰", "Desserts", desserts);
+
+  const adminHtml = createEmailLayout({
+    title: "Nouvelle demande de devis",
+    intro: "Une nouvelle demande de devis vient d'être envoyée via le site.",
+    infoRowsHtml,
+    menuRowsHtml,
+    messageHtml,
+    footerNote: "Répondez directement à cet email pour contacter le client.",
+  });
+
+  const customerHtml = createEmailLayout({
+    title: "Votre demande de devis a bien été reçue",
+    intro: `Bonjour ${quote.first_name}, votre demande est enregistrée. Retrouvez ci-dessous toutes les informations transmises.`,
+    infoRowsHtml,
+    menuRowsHtml,
+    messageHtml,
+    footerNote: "Vous pouvez aussi retrouver et compléter les informations depuis le site.",
+  });
+
   await Promise.all([
     transporter.sendMail({
       from: `"La Poêlée du Bonheur" <${user}>`,
@@ -150,19 +258,7 @@ async function sendQuoteEmails(quote: QuoteRequest) {
       replyTo: quote.email,
       subject: `Nouvelle demande de devis - ${customerName}`,
       text: `Une nouvelle demande de devis a été reçue.\n\n${summaryText}`,
-      html: `
-        <h2>Nouvelle demande de devis</h2>
-        <p><strong>Nom :</strong> ${customerNameHtml}</p>
-        <p><strong>Email :</strong> ${emailHtml}</p>
-        <p><strong>Téléphone :</strong> ${phoneHtml}</p>
-        <p><strong>Date :</strong> ${dateHtml}</p>
-        <p><strong>Lieu :</strong> ${placeHtml}</p>
-        <p><strong>Nombre de personnes :</strong> ${quote.number_of_people || 0}</p>
-        <p><strong>Entrées :</strong> ${startersHtml}</p>
-        <p><strong>Plat principal :</strong> ${mainDishHtml}</p>
-        <p><strong>Desserts :</strong> ${dessertsHtml}</p>
-        <p><strong>Message :</strong><br />${messageHtml}</p>
-      `,
+      html: adminHtml,
     }),
     transporter.sendMail({
       from: `"La Poêlée du Bonheur" <${user}>`,
@@ -175,20 +271,7 @@ async function sendQuoteEmails(quote: QuoteRequest) {
         "Récapitulatif :\n" +
         `${summaryText}\n\n` +
         "A bientôt,\nLa Poêlée du Bonheur",
-      html: `
-        <p>Bonjour ${escapeHtml(quote.first_name)},</p>
-        <p>Merci pour votre demande de devis auprès de <strong>La Poêlée du Bonheur</strong>.</p>
-        <p>Nous avons bien reçu votre demande et nous reviendrons vers vous rapidement.</p>
-        <h3>Récapitulatif</h3>
-        <p><strong>Date :</strong> ${dateHtml}</p>
-        <p><strong>Lieu :</strong> ${placeHtml}</p>
-        <p><strong>Nombre de personnes :</strong> ${quote.number_of_people || 0}</p>
-        <p><strong>Entrées :</strong> ${startersHtml}</p>
-        <p><strong>Plat principal :</strong> ${mainDishHtml}</p>
-        <p><strong>Desserts :</strong> ${dessertsHtml}</p>
-        <p><strong>Message :</strong><br />${messageHtml}</p>
-        <p>A bientôt,<br /><strong>La Poêlée du Bonheur</strong></p>
-      `,
+      html: customerHtml,
     }),
   ]);
 }
