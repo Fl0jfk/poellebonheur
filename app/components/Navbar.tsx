@@ -119,7 +119,7 @@ export function Navbar({ announcement }: NavbarProps) {
             className="flex items-center gap-4 rounded-2xl px-5 py-4 font-display text-2xl font-semibold text-ardoise-800 no-underline transition-colors hover:bg-creme-100"
           >
             <span className="text-2xl">🏡</span>
-            Notre histoire
+            Qui sommes-nous ?
           </Link>
           <Link
             href="/#menu"
