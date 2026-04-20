@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Footer } from "@/app/components/Footer";
 import { Navbar } from "@/app/components/Navbar";
 import { PhotoCollage } from "@/app/components/PhotoCollage";
+import { getBlurDataURL } from "@/app/lib/image-placeholder";
 type MenuCategoryNorm = "starter" | "main_dish" | "dessert";
 type MarketEntry = { id: string; date: string; place: string };
 type MarketsData = { markets: MarketEntry[] };
@@ -59,6 +60,8 @@ function filterUpcomingMarketsWithinWeek(entries: MarketEntry[]): MarketEntry[] 
 }
 
 export default function HomePage() {
+  const blurDataURL = useMemo(() => getBlurDataURL(), []);
+  const isProxiedMedia = (src: string) => src.startsWith("/api/public/media?");
   const [marketsData, setMarketsData] = useState<MarketsData | null | undefined>(undefined);
   const [menu, setMenu] = useState<MenuData | null | undefined>(undefined);
   const visibleMarkets = useMemo(() => {
@@ -250,7 +253,18 @@ export default function HomePage() {
                         <div key={item.id} className="card overflow-hidden border border-creme-100">
                           {item.photo_url ? (
                             <div className="relative h-48 w-full">
-                              <Image src={item.photo_url} alt={item.name} fill className="object-cover"/>
+                              <Image
+                                src={item.photo_url}
+                                alt={item.name}
+                                fill
+                                unoptimized={isProxiedMedia(item.photo_url)}
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                quality={60}
+                                loading="lazy"
+                                placeholder="blur"
+                                blurDataURL={blurDataURL}
+                                className="object-cover"
+                              />
                             </div>
                           ) : (
                             <div className="flex h-48 w-full items-center justify-center bg-creme-100 text-5xl text-ardoise-300">
@@ -279,6 +293,7 @@ export default function HomePage() {
                                     alt={item.partner_name}
                                     width={18}
                                     height={18}
+                                    quality={60}
                                     className="h-[18px] w-[18px] rounded-full object-cover"
                                   />
                                 ) : (

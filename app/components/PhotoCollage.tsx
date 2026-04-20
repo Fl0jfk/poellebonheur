@@ -2,16 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { getBlurDataURL } from "@/app/lib/image-placeholder";
 
 type CollagePhoto = { id: string; src: string; alt: string };
 
 type PhotoCollageProps = {hasMarketBanner?: boolean};
 
 export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
+  const blurDataURL = useMemo(() => getBlurDataURL("#dec7a5"), []);
+  const isProxiedMedia = (src: string) => src.startsWith("/api/public/media?");
   const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState<CollagePhoto[]>([]);
   const [instantPhoto, setInstantPhoto] = useState<CollagePhoto | null>(null);
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -35,9 +37,7 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
           return;
         }
         const data = (await r.json()) as { photos?: CollagePhoto[] };
-        const raw = Array.isArray(data.photos)
-          ? data.photos.filter((p) => p?.src && String(p.src).trim())
-          : [];
+        const raw = Array.isArray(data.photos) ? data.photos.filter((p) => p?.src && String(p.src).trim()) : [];
         const list = raw.slice(0, 8);
         setPhotos(list.length >= 5 ? list : []);
         if (list[0]?.src) {
@@ -90,7 +90,11 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
                     alt={instantPhoto.alt || "Photo de présentation"}
                     fill
                     priority
+                    unoptimized={isProxiedMedia(instantPhoto.src)}
                     quality={30}
+                    sizes="(max-width: 768px) 88vw, 720px"
+                    placeholder="blur"
+                    blurDataURL={blurDataURL}
                     className="h-full w-full scale-[1.03] object-cover blur-[3px]"
                   />
                 </div>
@@ -139,7 +143,18 @@ export function PhotoCollage({ hasMarketBanner = false }: PhotoCollageProps) {
                 <div className="pan-handle pan-handle-left" aria-hidden />
                 <div className="pan-handle pan-handle-right" aria-hidden />
                 <div className="pan-inner">
-                  <Image src={p.src} alt={p.alt} fill priority={i === active} className="h-full w-full object-cover" />
+                  <Image
+                    src={p.src}
+                    alt={p.alt}
+                    fill
+                    priority={i === active}
+                    unoptimized={isProxiedMedia(p.src)}
+                    quality={70}
+                    sizes="(max-width: 768px) 88vw, 720px"
+                    placeholder="blur"
+                    blurDataURL={blurDataURL}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               </div>
             </button>

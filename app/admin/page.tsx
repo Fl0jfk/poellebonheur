@@ -41,13 +41,9 @@ type QuotesData = { quotes: QuoteRequest[] };
 
 const ADMIN_API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY || "";
 
-function marketJsonUrl() {
-  return "/api/public/market";
-}
+function marketJsonUrl() { return "/api/public/market"}
 
-function menuJsonUrl() {
-  return "/api/public/menu";
-}
+function menuJsonUrl() {return "/api/public/menu"}
 
 function menuJsonUrlBusted(generation: number) {
   const base = menuJsonUrl();
@@ -145,11 +141,7 @@ async function uploadMenuPhoto(file: File) {
   if (!contentType.startsWith("image/")) throw new Error("Le fichier doit être une image.");
   const fd = new FormData();
   fd.append("file", file);
-  const r = await fetch("/api/admin/upload-photo", {
-    method: "POST",
-    headers: adminHeaders(),
-    body: fd,
-  });
+  const r = await fetch("/api/admin/upload-photo", { method: "POST", headers: adminHeaders(), body: fd});
   const text = await r.text();
   if (!r.ok) throw new Error(text || `HTTP ${r.status}`);
   const j = JSON.parse(text) as { photo_url?: string };
@@ -167,21 +159,13 @@ function initialTab(): "quotes" | "menu" | "market" | "collage" {
 }
 
 async function fetchCollageAdmin() {
-  const r = await fetch("/api/admin/collage", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...adminHeaders() },
-    body: JSON.stringify({ action: "list" }),
-  });
+  const r = await fetch("/api/admin/collage", { method: "POST", headers: { "Content-Type": "application/json", ...adminHeaders() }, body: JSON.stringify({ action: "list" })});
   if (!r.ok) return null;
   return (await r.json()) as CollageData;
 }
 
 async function saveCollageAdmin(photos: CollagePhoto[]) {
-  const r = await fetch("/api/admin/collage", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...adminHeaders() },
-    body: JSON.stringify({ action: "save", photos }),
-  });
+  const r = await fetch("/api/admin/collage", { method: "POST", headers: { "Content-Type": "application/json", ...adminHeaders() }, body: JSON.stringify({ action: "save", photos })});
   const text = await r.text();
   if (!r.ok) {
     let msg = `HTTP ${r.status}`;
@@ -199,18 +183,13 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
+      const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password })});
       if (!r.ok) {
         const j = (await r.json().catch(() => ({}))) as { error?: string };
         setError(j.error || "Mot de passe incorrect");
@@ -224,7 +203,6 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       setLoading(false);
     }
   }
-
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-3xl bg-white p-10 shadow-xl">
@@ -236,15 +214,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
         <form className="space-y-5" onSubmit={onSubmit}>
           <div>
             <label className="form-label">Mot de passe</label>
-            <input
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              required
-              autoFocus
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <input type="password" className="form-input" placeholder="••••••••" required autoFocus value={password} onChange={(e) => setPassword(e.target.value)}/>
           </div>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <button type="submit" disabled={loading} className="btn btn-safran w-full justify-center py-3">
@@ -266,11 +236,7 @@ function buildMenuItemNameMap(menu: MenuData | null | undefined): Record<string,
 
 function formatDishIds(ids: unknown, names: Record<string, string>): string {
   if (!Array.isArray(ids)) return "";
-  return ids
-    .filter((id): id is string => typeof id === "string")
-    .map((id) => names[id] || id)
-    .filter(Boolean)
-    .join(", ");
+  return ids.filter((id): id is string => typeof id === "string").map((id) => names[id] || id).filter(Boolean).join(", ");
 }
 
 function formatDishLabels(
@@ -279,9 +245,7 @@ function formatDishLabels(
   names: Record<string, string>,
 ): string {
   if (Array.isArray(labels)) {
-    const cleanLabels = labels
-      .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
-      .map((v) => v.trim());
+    const cleanLabels = labels.filter((v): v is string => typeof v === "string" && v.trim().length > 0).map((v) => v.trim());
     if (cleanLabels.length > 0) return cleanLabels.join(", ");
   }
   return formatDishIds(ids, names);
@@ -293,14 +257,8 @@ function QuoteCard({ q, dishNames }: { q: QuoteRequest; dishNames: Record<string
   const eventDate = q.event_date || "Date non précisée";
   const starters = formatDishLabels(q.starters, q.starters_labels, dishNames);
   const desserts = formatDishLabels(q.desserts, q.desserts_labels, dishNames);
-  const mainLabel =
-    typeof q.main_dish_label === "string" && q.main_dish_label.trim()
-      ? q.main_dish_label.trim()
-      : q.main_dish
-        ? dishNames[q.main_dish] || q.main_dish
-        : "";
+  const mainLabel = typeof q.main_dish_label === "string" && q.main_dish_label.trim() ? q.main_dish_label.trim(): q.main_dish ? dishNames[q.main_dish] || q.main_dish : "";
   const fullName = `${q.first_name ?? ""} ${q.last_name ?? ""}`.trim() || "—";
-
   return (
     <div className="rounded-2xl border border-creme-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -313,9 +271,7 @@ function QuoteCard({ q, dishNames }: { q: QuoteRequest; dishNames: Record<string
         <div>
           <span className="text-ardoise-500">📧 </span>
           {q.email ? (
-            <a href={`mailto:${q.email}`} className="text-bordeaux-600 hover:underline">
-              {q.email}
-            </a>
+            <a href={`mailto:${q.email}`} className="text-bordeaux-600 hover:underline">{q.email}</a>
           ) : (
             <span className="text-ardoise-400">Non renseigné</span>
           )}
@@ -323,9 +279,7 @@ function QuoteCard({ q, dishNames }: { q: QuoteRequest; dishNames: Record<string
         {q.phone ? (
           <div>
             <span className="text-ardoise-500">📞 </span>
-            <a href={`tel:${q.phone}`} className="text-bordeaux-600 hover:underline">
-              {q.phone}
-            </a>
+            <a href={`tel:${q.phone}`} className="text-bordeaux-600 hover:underline">{q.phone}</a>
           </div>
         ) : null}
         <div>📅 {eventDate}</div>
@@ -360,7 +314,6 @@ function QuoteCard({ q, dishNames }: { q: QuoteRequest; dishNames: Record<string
 function QuotesPanel() {
   const [data, setData] = useState<QuotesData | null | undefined>(undefined);
   const [dishNames, setDishNames] = useState<Record<string, string>>({});
-
   const load = useCallback(async () => {
     setData(undefined);
     const [q, menuRes] = await Promise.all([fetchQuotesAdmin(), fetch(menuJsonUrl())]);
@@ -372,25 +325,18 @@ function QuotesPanel() {
     }
     setData(q);
   }, []);
-
   useEffect(() => {
     load();
   }, [load]);
-
   const sorted = useMemo(() => {
     if (!data?.quotes) return [];
-    return [...data.quotes]
-      .filter((row) => row && typeof row === "object")
-      .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+    return [...data.quotes].filter((row) => row && typeof row === "object").sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
   }, [data]);
-
   return (
     <div className="pb-16">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="font-display text-2xl text-ardoise-900">Demandes de devis</h2>
-        <button type="button" className="btn btn-ghost px-4 py-2 text-sm" onClick={() => load()}>
-          Actualiser
-        </button>
+        <button type="button" className="btn btn-ghost px-4 py-2 text-sm" onClick={() => load()}>Actualiser</button>
       </div>
       {data === undefined ? (
         <div className="flex justify-center py-12">
@@ -430,7 +376,6 @@ function MenuPanel() {
   const [menuOk, setMenuOk] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const menuPhotoFileRef = useRef<HTMLInputElement>(null);
-
   function resetForm() {
     setEditingId(null);
     setName("");
@@ -444,7 +389,6 @@ function MenuPanel() {
     setFormError(null);
     if (menuPhotoFileRef.current) menuPhotoFileRef.current.value = "";
   }
-
   function startEdit(item: MenuItem) {
     setEditingId(item.id);
     setName(item.name || "");
@@ -459,17 +403,14 @@ function MenuPanel() {
     setMenuOk(null);
     if (menuPhotoFileRef.current) menuPhotoFileRef.current.value = "";
   }
-
   const reload = useCallback(async () => {
     setMenu(undefined);
     const m = await loadMenuForAdmin(gen);
     setMenu(m);
   }, [gen]);
-
   useEffect(() => {
     reload();
   }, [reload]);
-
   async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -482,7 +423,6 @@ function MenuPanel() {
       setPhotoNote(err instanceof Error ? err.message : "Erreur upload");
     }
   }
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (saving) return;
@@ -521,7 +461,6 @@ function MenuPanel() {
     }
     setSaving(false);
   }
-
   async function onDelete(id: string) {
     try {
       if (editingId === id) resetForm();
@@ -531,9 +470,7 @@ function MenuPanel() {
       /* ignore */
     }
   }
-
   const items = menu?.items ?? [];
-
   return (
     <div className="space-y-10 pb-16">
       <div className="rounded-2xl border border-creme-200 bg-white p-6 shadow-sm">
@@ -555,11 +492,7 @@ function MenuPanel() {
             </div>
             <div>
               <label className="form-label">Catégorie</label>
-              <select
-                className="form-input form-input-select"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
+              <select className="form-input form-input-select" value={category} onChange={(e) => setCategory(e.target.value)}>
                 <option value="starter">Entrée</option>
                 <option value="main_dish">Plat principal</option>
                 <option value="dessert">Dessert</option>
@@ -718,26 +651,17 @@ function MarketPanel() {
     );
     setLoading(false);
   }, []);
-
   useEffect(() => {
     load();
   }, [load]);
-
   function addMarket() {
     setMarkets((prev) => [
       ...prev,
       { id: `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, date: "", place: "" },
     ]);
   }
-
-  function updateRow(idx: number, patch: Partial<MarketEntry>) {
-    setMarkets((prev) => prev.map((m, i) => (i === idx ? { ...m, ...patch } : m)));
-  }
-
-  function removeRow(idx: number) {
-    setMarkets((prev) => prev.filter((_, i) => i !== idx));
-  }
-
+  function updateRow(idx: number, patch: Partial<MarketEntry>) { setMarkets((prev) => prev.map((m, i) => (i === idx ? { ...m, ...patch } : m)))}
+  function removeRow(idx: number) { setMarkets((prev) => prev.filter((_, i) => i !== idx))}
   async function onSave() {
     if (saving) return;
     setSaving(true);
@@ -758,7 +682,6 @@ function MarketPanel() {
     }
     setSaving(false);
   }
-
   return (
     <div className="max-w-2xl pb-16">
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -821,8 +744,7 @@ function MarketPanel() {
     </div>
   );
 }
-
-const COLLAGE_MIN = 5;
+const COLLAGE_MIN = 3;
 const COLLAGE_MAX = 8;
 function isS3BackedCollageSrc(src: string): boolean {
   const t = src.trim();
@@ -836,7 +758,6 @@ function isS3BackedCollageSrc(src: string): boolean {
   }
   return false;
 }
-
 function padCollageSlots(list: CollagePhoto[]): CollagePhoto[] {
   const trimmed = list.slice(0, COLLAGE_MAX);
   const out = [...trimmed];
@@ -855,9 +776,7 @@ function CollagePanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-
   const filledCount = photos.filter((p) => p.src?.trim()).length;
-
   const load = useCallback(async () => {
     setLoading(true);
     const data = await fetchCollageAdmin();
@@ -865,11 +784,9 @@ function CollagePanel() {
     setPhotos(padCollageSlots(raw));
     setLoading(false);
   }, []);
-
   useEffect(() => {
     load();
   }, [load]);
-
   function addPhoto() {
     setPhotos((prev) => {
       if (prev.length >= COLLAGE_MAX) return prev;
@@ -883,18 +800,13 @@ function CollagePanel() {
       ];
     });
   }
-
-  function updatePhoto(idx: number, patch: Partial<CollagePhoto>) {
-    setPhotos((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
-  }
-
+  function updatePhoto(idx: number, patch: Partial<CollagePhoto>) { setPhotos((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))}
   function removePhoto(idx: number) {
     setPhotos((prev) => {
       if (prev.length <= COLLAGE_MIN) return prev;
       return prev.filter((_, i) => i !== idx);
     });
   }
-
   async function uploadForPhoto(idx: number, file: File) {
     setNote("Upload photo en cours…");
     try {
@@ -905,21 +817,16 @@ function CollagePanel() {
       setNote(err instanceof Error ? err.message : "Erreur upload");
     }
   }
-
   async function onSave() {
     if (saving) return;
     const filled = photos.filter((p) => p.src?.trim());
     if (filled.length < COLLAGE_MIN || filled.length > COLLAGE_MAX) {
-      setNote(
-        `Il faut entre ${COLLAGE_MIN} et ${COLLAGE_MAX} photos complètes. Actuellement : ${filled.length}.`,
-      );
+      setNote(`Il faut entre ${COLLAGE_MIN} et ${COLLAGE_MAX} photos complètes. Actuellement : ${filled.length}.`);
       return;
     }
     const notOnS3 = filled.filter((p) => !isS3BackedCollageSrc(p.src));
     if (notOnS3.length > 0) {
-      setNote(
-        "Chaque photo doit être envoyée sur S3 via le bouton « Choisir un fichier » (pas d’URL locale type /photo.jpg). Remplacez les images concernées.",
-      );
+      setNote("Chaque photo doit être envoyée sur S3 via le bouton « Choisir un fichier » (pas d’URL locale type /photo.jpg). Remplacez les images concernées.");
       return;
     }
     setSaving(true);
@@ -933,10 +840,8 @@ function CollagePanel() {
     }
     setSaving(false);
   }
-
   const canAdd = photos.length < COLLAGE_MAX;
   const canRemove = photos.length > COLLAGE_MIN;
-
   return (
     <div className="space-y-6 pb-16">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1056,16 +961,13 @@ function CollagePanel() {
 export default function AdminPage() {
   const [auth, setAuth] = useState<boolean | null>(null);
   const [tab, setTab] = useState<"quotes" | "menu" | "market" | "collage">("quotes");
-
   useEffect(() => {
     setAuth(localStorage.getItem("admin_auth") === "1");
     setTab(initialTab());
   }, []);
-
   useEffect(() => {
     if (auth) localStorage.setItem(TAB_KEY, tab);
   }, [auth, tab]);
-
   if (auth === null) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -1073,11 +975,7 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  if (!auth) {
-    return <LoginForm onSuccess={() => setAuth(true)} />;
-  }
-
+  if (!auth) { return <LoginForm onSuccess={() => setAuth(true)} />;}
   return (
     <div>
       <header className="sticky top-0 z-30 border-b border-creme-200 bg-white">

@@ -86,12 +86,7 @@ function formatList(values: string[]): string {
 }
 
 function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
 function createEmailLayout(params: {
@@ -100,16 +95,11 @@ function createEmailLayout(params: {
   infoRowsHtml: string;
   menuRowsHtml: string;
   messageHtml: string;
-  footerNote?: string;
 }) {
   const logoUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
     ? `${process.env.NEXT_PUBLIC_SITE_URL.trim().replace(/\/$/, "")}/Logo.png`
     : "";
   const safeLogoUrl = escapeHtml(logoUrl);
-  const footerNote = params.footerNote
-    ? `<p style="margin: 0; color: #5f3e1f; font-size: 13px;">${escapeHtml(params.footerNote)}</p>`
-    : "";
-
   return `
     <div style="margin:0; padding:0; background:#fff7f0; font-family: Arial, Helvetica, sans-serif; color:#2c1c0f;">
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="padding:24px 10px;">
@@ -159,7 +149,6 @@ function createEmailLayout(params: {
               <tr>
                 <td style="padding:18px 24px; border-top:1px solid #f3dcc8; background:#fff7f0;">
                   <p style="margin:0 0 6px 0; color:#5f3e1f; font-size:13px;">La Poêlée du Bonheur</p>
-                  ${footerNote}
                 </td>
               </tr>
             </table>
@@ -238,8 +227,7 @@ async function sendQuoteEmails(quote: QuoteRequest) {
     intro: "Une nouvelle demande de devis vient d'être envoyée via le site.",
     infoRowsHtml,
     menuRowsHtml,
-    messageHtml,
-    footerNote: "Répondez directement à cet email pour contacter le client.",
+    messageHtml
   });
 
   const customerHtml = createEmailLayout({
@@ -247,8 +235,7 @@ async function sendQuoteEmails(quote: QuoteRequest) {
     intro: `Bonjour ${quote.first_name}, votre demande est enregistrée. Retrouvez ci-dessous toutes les informations transmises.`,
     infoRowsHtml,
     menuRowsHtml,
-    messageHtml,
-    footerNote: "Vous pouvez aussi retrouver et compléter les informations depuis le site.",
+    messageHtml
   });
 
   await Promise.all([

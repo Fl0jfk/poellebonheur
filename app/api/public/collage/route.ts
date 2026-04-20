@@ -62,5 +62,8 @@ export async function GET() {
     return NextResponse.json(storageConfigErrorJson(), { status: 503 });
   }
   const collage = await loadCollage(st);
-  return NextResponse.json(collage);
+  return NextResponse.json(
+    collage,
+    { headers: { "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400" } },
+  );
 }
