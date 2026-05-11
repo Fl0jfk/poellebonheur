@@ -189,10 +189,19 @@ export default function HomePage() {
                 desserts. La carte change régulièrement pour offrir un vrai tour des saveurs lors
                 de vos événements (mariages, anniversaires, foires, marchés...).
               </p>
-              <p className="mb-8 font-body leading-relaxed text-ardoise-600">
+              <p className="mb-6 font-body leading-relaxed text-ardoise-600">
                 Exemples du moment : assiettes de charcuterie en entrée, crème brûlée, mousse au
                 chocolat ou panna cotta en dessert. Retrouvez-nous lors de nos prochains événements !
               </p>
+              <div className="mb-8 flex items-start gap-3 rounded-2xl border border-safran-200 bg-safran-50 px-5 py-4">
+                <span aria-hidden className="text-2xl leading-none">📍</span>
+                <p className="font-body text-sm leading-relaxed text-ardoise-700">
+                  <strong className="text-bordeaux-700">Traiteur en Normandie :</strong> nous nous
+                  déplaçons sur l&apos;ensemble de la région (Calvados, Manche, Orne, Eure et
+                  Seine-Maritime) — Caen, Rouen, Le Havre, Cherbourg, Évreux, Lisieux, Bayeux et
+                  alentours.
+                </p>
+              </div>
               <div className="flex flex-wrap gap-3">
                 <span className="tag bg-bordeaux-100 text-bordeaux-700">🥘 Poêlées variées</span>
                 <span className="tag bg-safran-100 text-safran-700">🥗 Entrées maison</span>

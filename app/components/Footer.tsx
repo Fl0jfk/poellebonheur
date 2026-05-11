@@ -19,6 +19,10 @@ export function Footer() {
               Traiteur événementielle spécialisée en paella et cuisine méditerranéenne. Fait maison,
               avec amour.
             </p>
+            <p className="flex items-start gap-2 text-sm leading-relaxed text-ardoise-400">
+              <span aria-hidden>📍</span>
+              <span>Intervention sur toute la <strong className="text-ardoise-200">Normandie</strong> (Calvados, Manche, Orne, Eure, Seine-Maritime).</span>
+            </p>
             <div className="flex flex-wrap gap-2">
               <span className="tag bg-bordeaux-100 text-bordeaux-700">🥘 Poêlées variées</span>
               <span className="tag bg-safran-100 text-safran-700">🥗 Entrées maison</span>
