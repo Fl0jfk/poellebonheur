@@ -808,13 +808,13 @@ function MarketPanel() {
     <div className="max-w-2xl pb-16">
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-display text-2xl text-ardoise-900">Marchés</h2>
+          <h2 className="font-display text-2xl text-ardoise-900">Événements</h2>
           <p className="mt-1 text-sm text-ardoise-600">
-            Sur l&apos;accueil, seuls les marchés dans les 7 prochains jours (non passés) sont affichés.
+            Sur l&apos;accueil, seuls les événements dans les 7 prochains jours (non passés) sont affichés.
           </p>
         </div>
         <button type="button" className="btn btn-ghost shrink-0 px-4 py-2 text-sm" onClick={addMarket}>
-          Ajouter un marché
+          Ajouter un événement
         </button>
       </div>
       {loading ? (
@@ -836,10 +836,10 @@ function MarketPanel() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">Lieu / nom du marché</label>
+                  <label className="form-label">Lieu / nom de l&apos;événement</label>
                   <input
                     className="form-input"
-                    placeholder="ex : Marché de Montrouge"
+                    placeholder="ex : Marché de Montrouge, Foire à tout de..."
                     value={m.place}
                     onChange={(e) => updateRow(idx, { place: e.target.value })}
                   />
@@ -851,7 +851,7 @@ function MarketPanel() {
                   className="text-sm font-medium text-red-600 hover:underline"
                   onClick={() => removeRow(idx)}
                 >
-                  Supprimer ce marché
+                  Supprimer cet événement
                 </button>
               </div>
             </div>
@@ -859,7 +859,7 @@ function MarketPanel() {
           {errMsg ? <p className="text-sm text-red-600">{errMsg}</p> : null}
           {saved ? <p className="text-sm text-green-600">✓ Enregistré</p> : null}
           <button type="button" disabled={saving} className="btn btn-safran px-6" onClick={onSave}>
-            {saving ? "Enregistrement..." : "Enregistrer les marchés"}
+            {saving ? "Enregistrement..." : "Enregistrer les événements"}
           </button>
         </div>
       )}
@@ -1121,7 +1121,7 @@ export default function AdminPage() {
             [
               ["quotes", "Devis"],
               ["menu", "Menu"],
-              ["market", "Marché"],
+              ["market", "Événements"],
               ["collage", "Photocollage"],
             ] as const
           ).map(([id, label]) => (

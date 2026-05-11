@@ -67,8 +67,8 @@ export default function HomePage() {
         <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-center sm:gap-3">
           <span className="text-lg leading-none sm:text-xl">🛖</span>
           <p className="font-body text-sm font-medium leading-snug">
-            Je serai présente au marché le <strong>{formatMarketDate(visibleMarkets[0].date)}</strong>
-            {visibleMarkets[0].place ? ` à ${visibleMarkets[0].place}` : ""}.
+            Retrouvez-moi le <strong>{formatMarketDate(visibleMarkets[0].date)}</strong>
+            {visibleMarkets[0].place ? ` — ${visibleMarkets[0].place}` : ""}.
           </p>
         </div>
         {visibleMarkets.length > 1 ? (
@@ -131,7 +131,7 @@ export default function HomePage() {
               <br />
               <span className="text-safran-400">du Bonheur</span>
             </h1>
-            <p className="mb-3 font-hand text-2xl text-ardoise-300">Traiteur événementiel & marchés</p>
+            <p className="mb-3 font-hand text-2xl text-ardoise-300">Traiteur événementiel</p>
             <p className="mb-8 max-w-2xl font-body text-lg leading-relaxed text-ardoise-300 mx-auto px-6">
               Poêlées gourmandes et cuisine généreuse : paella, jambalaya, tartiflette, rougail
               saucisse, mais aussi entrées et desserts maison. La carte évolue souvent selon les
@@ -186,12 +186,12 @@ export default function HomePage() {
                 La Poêlée du Bonheur, c&apos;est une cuisine authentique et généreuse, préparée
                 avec des produits frais de qualité. Nous proposons des poêlées salées variées
                 (paella, jambalaya, tartiflette, rougail saucisse...) ainsi que des entrées et des
-                desserts. La carte change régulièrement pour offrir un vrai tour des saveurs sur
-                les marchés et lors de vos événements.
+                desserts. La carte change régulièrement pour offrir un vrai tour des saveurs lors
+                de vos événements (mariages, anniversaires, foires, marchés...).
               </p>
               <p className="mb-8 font-body leading-relaxed text-ardoise-600">
                 Exemples du moment : assiettes de charcuterie en entrée, crème brûlée, mousse au
-                chocolat ou panna cotta en dessert. Retrouvez-nous sur les marchés locaux !
+                chocolat ou panna cotta en dessert. Retrouvez-nous lors de nos prochains événements !
               </p>
               <div className="flex flex-wrap gap-3">
                 <span className="tag bg-bordeaux-100 text-bordeaux-700">🥘 Poêlées variées</span>
