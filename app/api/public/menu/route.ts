@@ -2,6 +2,7 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
 import { getStorage, storageConfigErrorJson, type StorageContext } from "@/lib/storage-env";
+import { normalizeMenuCategory } from "@/app/lib/menu-category";
 
 const KEY = "data/menu.json";
 
@@ -55,11 +56,14 @@ export async function GET() {
   const items = (menu.items || []).map((it) => {
     if (!it || typeof it !== "object") return it;
     const row = it as Record<string, unknown>;
+    const category =
+      typeof row.category === "string" ? normalizeMenuCategory(row.category) : "starter";
     const photo = row.photo_url;
+    const base = { ...row, category };
     if (typeof photo === "string" || photo === null || photo === undefined) {
-      return { ...row, photo_url: rewriteUploadPhotoUrl(photo as string | null, st.bucket, st.region) };
+      return { ...base, photo_url: rewriteUploadPhotoUrl(photo as string | null, st.bucket, st.region) };
     }
-    return it;
+    return base;
   });
   return NextResponse.json(
     { items },

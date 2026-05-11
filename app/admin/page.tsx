@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { normalizeMenuCategory, type MenuCategoryNorm } from "@/app/lib/menu-category";
 
 type MarketEntry = { id: string; date: string; place: string };
 type MarketsData = { markets: MarketEntry[] };
@@ -45,22 +46,9 @@ function marketJsonUrl() { return "/api/public/market"}
 
 function menuJsonUrl() {return "/api/public/menu"}
 
-function menuJsonUrlBusted(generation: number) {
-  const base = menuJsonUrl();
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}cb=${generation}`;
-}
-
 function adminHeaders(): HeadersInit {
   if (!ADMIN_API_KEY) return {};
   return { "x-admin-key": ADMIN_API_KEY };
-}
-
-function normalizeMenuCategory(raw: string): "starter" | "main_dish" | "dessert" {
-  const lower = raw.trim().toLowerCase().replace(/-/g, "_");
-  if (lower === "maindish" || lower === "main_dish") return "main_dish";
-  if (lower === "dessert" || lower === "desserts") return "dessert";
-  return "starter";
 }
 
 function categoryLabel(c: "starter" | "main_dish" | "dessert") {
@@ -69,14 +57,31 @@ function categoryLabel(c: "starter" | "main_dish" | "dessert") {
   return "Entrée";
 }
 
+function categoryEmoji(c: MenuCategoryNorm) {
+  if (c === "main_dish") return "🍲";
+  if (c === "dessert") return "🍮";
+  return "🥗";
+}
+
+function categorySectionTitle(c: MenuCategoryNorm) {
+  if (c === "main_dish") return "Plats principaux";
+  if (c === "dessert") return "Desserts";
+  return "Entrées";
+}
+
 async function fetchQuotesAdmin() {
   const r = await fetch("/api/admin/quotes", { headers: adminHeaders() });
   if (!r.ok) return null;
   return (await r.json()) as QuotesData;
 }
 
-async function loadMenuForAdmin(generation: number) {
-  const r = await fetch(menuJsonUrlBusted(generation));
+async function loadMenuForAdmin() {
+  const r = await fetch("/api/admin/menu", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...adminHeaders() },
+    body: JSON.stringify({ action: "list" }),
+    cache: "no-store",
+  });
   if (!r.ok) return null;
   return (await r.json()) as MenuData;
 }
@@ -405,7 +410,7 @@ function MenuPanel() {
   }
   const reload = useCallback(async () => {
     setMenu(undefined);
-    const m = await loadMenuForAdmin(gen);
+    const m = await loadMenuForAdmin();
     setMenu(m);
   }, [gen]);
   useEffect(() => {
@@ -464,13 +469,24 @@ function MenuPanel() {
   async function onDelete(id: string) {
     try {
       if (editingId === id) resetForm();
+      setMenu((prev) => (prev ? { items: prev.items.filter((x) => x.id !== id) } : prev));
       await deleteMenuItem(id);
       setGen((g) => g + 1);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Suppression impossible");
+      setGen((g) => g + 1);
     }
   }
-  const items = menu?.items ?? [];
+  const itemsByCategory = useMemo(() => {
+    const list = menu?.items ?? [];
+    const order: MenuCategoryNorm[] = ["starter", "main_dish", "dessert"];
+    const buckets: Record<MenuCategoryNorm, MenuItem[]> = { starter: [], main_dish: [], dessert: [] };
+    for (const item of list) {
+      buckets[normalizeMenuCategory(item.category || "")].push(item);
+    }
+    return order.map((cat) => ({ cat, items: buckets[cat] })).filter((g) => g.items.length > 0);
+  }, [menu]);
+
   return (
     <div className="space-y-10 pb-16">
       <div className="rounded-2xl border border-creme-200 bg-white p-6 shadow-sm">
@@ -560,65 +576,74 @@ function MenuPanel() {
           <div className="space-y-2 text-sm text-red-600">
             <p>Impossible de charger le menu (réseau, CORS ou JSON invalide).</p>
           </div>
-        ) : items.length === 0 ? (
+        ) : itemsByCategory.length === 0 ? (
           <p className="text-sm text-ardoise-500">Aucun plat dans la carte.</p>
         ) : (
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className={`flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4 transition-colors ${
-                  editingId === item.id
-                    ? "border-bordeaux-400 ring-2 ring-bordeaux-100"
-                    : "border-creme-200 hover:border-bordeaux-200"
-                }`}
-              >
-                <button
-                  type="button"
-                  className="flex min-w-0 flex-1 items-center gap-4 text-left"
-                  onClick={() => startEdit(item)}
-                >
-                  {item.photo_url ? (
-                    <Image
-                      src={item.photo_url}
-                      alt=""
-                      width={100}
-                      height={100}
-                      className="h-16 w-16 flex-shrink-0 rounded-lg border border-creme-100 object-cover sm:h-20 sm:w-20"
-                    />
-                  ) : null}
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-ardoise-900">{item.name}</span>
-                      <span className="tag bg-creme-100 text-xs text-ardoise-600">
-                        {categoryLabel(normalizeMenuCategory(item.category))}
-                      </span>
-                      {item.partner_name ? (
-                        <span className="tag bg-safran-100 text-xs text-safran-700">Partenaire</span>
+          <div className="space-y-8">
+            {itemsByCategory.map(({ cat, items: groupItems }) => (
+              <div key={cat} className="space-y-2">
+                <p className="border-b border-creme-200 pb-2 font-hand text-lg font-bold text-ardoise-800">
+                  <span className="mr-2">{categoryEmoji(cat)}</span>
+                  {categorySectionTitle(cat)}
+                  <span className="ml-2 text-sm font-normal text-ardoise-500">({groupItems.length})</span>
+                </p>
+                {groupItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4 transition-colors ${
+                      editingId === item.id
+                        ? "border-bordeaux-400 ring-2 ring-bordeaux-100"
+                        : "border-creme-200 hover:border-bordeaux-200"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center gap-4 text-left"
+                      onClick={() => startEdit(item)}
+                    >
+                      {item.photo_url ? (
+                        <Image
+                          src={item.photo_url}
+                          alt=""
+                          width={100}
+                          height={100}
+                          className="h-16 w-16 flex-shrink-0 rounded-lg border border-creme-100 object-cover sm:h-20 sm:w-20"
+                        />
                       ) : null}
-                    </div>
-                    <p className="truncate text-sm text-ardoise-500">{item.description}</p>
-                    <p className="mt-1 text-xs text-bordeaux-600">Cliquer pour modifier</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-ardoise-900">{item.name}</span>
+                          <span className="tag bg-creme-100 text-xs text-ardoise-600">
+                            {categoryLabel(normalizeMenuCategory(item.category))}
+                          </span>
+                          {item.partner_name ? (
+                            <span className="tag bg-safran-100 text-xs text-safran-700">Partenaire</span>
+                          ) : null}
+                        </div>
+                        <p className="truncate text-sm text-ardoise-500">{item.description}</p>
+                        <p className="mt-1 text-xs text-bordeaux-600">Cliquer pour modifier</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      title="Supprimer"
+                      className="flex-shrink-0 rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void onDelete(item.id);
+                      }}
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
                   </div>
-                </button>
-                <button
-                  type="button"
-                  title="Supprimer"
-                  className="flex-shrink-0 rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void onDelete(item.id);
-                  }}
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
+                ))}
               </div>
             ))}
           </div>

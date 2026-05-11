@@ -2,6 +2,7 @@ import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
 import { getStorage, storageConfigErrorJson, type StorageContext } from "@/lib/storage-env";
+import { normalizeMenuCategory } from "@/app/lib/menu-category";
 
 const KEY = "data/menu.json";
 
@@ -45,6 +46,7 @@ function menuWithRewrittenPhotos(data: MenuData, st: StorageContext): MenuData {
   return {
     items: (data.items || []).map((it) => ({
       ...it,
+      category: normalizeMenuCategory(it.category || "starter"),
       photo_url: rewriteUploadPhotoUrl(it.photo_url, st.bucket, st.region),
       partner_logo_url: rewriteUploadPhotoUrl(it.partner_logo_url, st.bucket, st.region),
     })),
@@ -152,7 +154,7 @@ export async function POST(req: Request) {
       id: makeId(),
       name: body.name.trim(),
       description: body.description?.trim() || "",
-      category: body.category?.trim() || "starter",
+      category: normalizeMenuCategory(body.category?.trim() || "starter"),
       photo_url: body.photo_url?.trim() || null,
       price_info: null,
       partner_name: body.partner_name?.trim() || null,
@@ -187,7 +189,7 @@ export async function POST(req: Request) {
               ...item,
               name: body.name?.trim() || item.name,
               description: body.description?.trim() || "",
-              category: body.category?.trim() || "starter",
+              category: normalizeMenuCategory(body.category?.trim() || "starter"),
               photo_url: body.photo_url?.trim() || null,
               partner_name: body.partner_name?.trim() || null,
               partner_url: body.partner_url?.trim() || null,

@@ -7,7 +7,7 @@ import { Footer } from "@/app/components/Footer";
 import { Navbar } from "@/app/components/Navbar";
 import { PhotoCollage } from "@/app/components/PhotoCollage";
 import { getBlurDataURL } from "@/app/lib/image-placeholder";
-type MenuCategoryNorm = "starter" | "main_dish" | "dessert";
+import { normalizeMenuCategory, type MenuCategoryNorm } from "@/app/lib/menu-category";
 type MarketEntry = { id: string; date: string; place: string };
 type MarketsData = { markets: MarketEntry[] };
 type MenuItem = { id: string; name: string; description: string; photo_url?: string | null; category: string; partner_name?: string | null; partner_url?: string | null; partner_logo_url?: string | null};
@@ -18,13 +18,6 @@ const CATS: MenuCategoryNorm[] = ["starter", "main_dish", "dessert"];
 function menuJsonUrl() { return "/api/public/menu"}
 
 function marketJsonUrl() { return "/api/public/market"}
-
-function normalizeMenuCategory(raw: string): MenuCategoryNorm {
-  const lower = raw.trim().toLowerCase().replace(/-/g, "_");
-  if (lower === "maindish" || lower === "main_dish") return "main_dish";
-  if (lower === "dessert" || lower === "desserts") return "dessert";
-  return "starter";
-}
 
 function categoryLabel(c: MenuCategoryNorm) {
   if (c === "main_dish") return "Plat principal";
@@ -93,7 +86,10 @@ export default function HomePage() {
   useEffect(() => {
     let ok = true;
     (async () => {
-      const [mRes, menuRes] = await Promise.all([fetch(marketJsonUrl()), fetch(menuJsonUrl())]);
+      const [mRes, menuRes] = await Promise.all([
+        fetch(marketJsonUrl()),
+        fetch(menuJsonUrl(), { cache: "no-store" }),
+      ]);
       if (!ok) return;
       if (mRes.ok) {
         const raw = (await mRes.json()) as MarketsData;

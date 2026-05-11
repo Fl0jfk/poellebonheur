@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Footer } from "@/app/components/Footer";
 import { Navbar } from "@/app/components/Navbar";
+import { normalizeMenuCategory } from "@/app/lib/menu-category";
 
 type MenuItem = {
   id: string;
@@ -35,15 +36,8 @@ type QuotePayload = {
 
 function menuJsonUrl() {return "/api/public/menu";}
 
-function normalizeMenuCategory(raw: string): "starter" | "main_dish" | "dessert" {
-  const lower = raw.trim().toLowerCase().replace(/-/g, "_");
-  if (lower === "maindish" || lower === "main_dish") return "main_dish";
-  if (lower === "dessert" || lower === "desserts") return "dessert";
-  return "starter";
-}
-
 async function fetchMenu() {
-  const r = await fetch(menuJsonUrl());
+  const r = await fetch(menuJsonUrl(), { cache: "no-store" });
   if (!r.ok) return null;
   return (await r.json()) as MenuData;
 }
