@@ -132,6 +132,43 @@ async function deleteMenuItem(id: string) {
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
 }
 
+/** Échange avec le voisin dans la même catégorie ; null si impossible (borne). */
+function swapAdjacentInCategoryInPlace(items: MenuItem[], id: string, direction: "up" | "down"): MenuItem[] | null {
+  const next = [...items];
+  const idx = next.findIndex((x) => x.id === id);
+  if (idx === -1) return null;
+  const cat = normalizeMenuCategory(next[idx].category || "");
+  const indices: number[] = [];
+  for (let i = 0; i < next.length; i++) {
+    if (normalizeMenuCategory(next[i].category || "") === cat) indices.push(i);
+  }
+  const posInCat = indices.indexOf(idx);
+  if (posInCat === -1) return null;
+  const neighborIdx =
+    direction === "up"
+      ? posInCat > 0
+        ? indices[posInCat - 1]
+        : null
+      : posInCat < indices.length - 1
+        ? indices[posInCat + 1]
+        : null;
+  if (neighborIdx === null) return null;
+  const tmp = next[idx];
+  next[idx] = next[neighborIdx];
+  next[neighborIdx] = tmp;
+  return next;
+}
+
+async function reorderMenuItem(id: string, direction: "up" | "down") {
+  const r = await fetch("/api/admin/menu", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...adminHeaders() },
+    body: JSON.stringify({ action: "reorder", id, direction }),
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(text || `HTTP ${r.status}`);
+}
+
 async function saveMarketsData(data: MarketsData) {
   const r = await fetch("/api/admin/market", {
     method: "POST",
@@ -380,6 +417,7 @@ function MenuPanel() {
   const [formError, setFormError] = useState<string | null>(null);
   const [menuOk, setMenuOk] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
   const menuPhotoFileRef = useRef<HTMLInputElement>(null);
   function resetForm() {
     setEditingId(null);
@@ -408,14 +446,18 @@ function MenuPanel() {
     setMenuOk(null);
     if (menuPhotoFileRef.current) menuPhotoFileRef.current.value = "";
   }
-  const reload = useCallback(async () => {
-    setMenu(undefined);
-    const m = await loadMenuForAdmin();
-    setMenu(m);
-  }, [gen]);
   useEffect(() => {
-    reload();
-  }, [reload]);
+    let ok = true;
+    setMenu(undefined);
+    void (async () => {
+      const m = await loadMenuForAdmin();
+      if (!ok) return;
+      setMenu(m);
+    })();
+    return () => {
+      ok = false;
+    };
+  }, [gen]);
   async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -475,6 +517,23 @@ function MenuPanel() {
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Suppression impossible");
       setGen((g) => g + 1);
+    }
+  }
+  async function onReorder(id: string, direction: "up" | "down") {
+    if (!menu?.items || reorderingId) return;
+    const swapped = swapAdjacentInCategoryInPlace(menu.items, id, direction);
+    if (!swapped) return;
+    const previous = menu;
+    setMenu({ items: swapped });
+    setReorderingId(id);
+    setFormError(null);
+    try {
+      await reorderMenuItem(id, direction);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Réordonnancement impossible");
+      setMenu(previous);
+    } finally {
+      setReorderingId(null);
     }
   }
   const itemsByCategory = useMemo(() => {
@@ -587,7 +646,11 @@ function MenuPanel() {
                   {categorySectionTitle(cat)}
                   <span className="ml-2 text-sm font-normal text-ardoise-500">({groupItems.length})</span>
                 </p>
-                {groupItems.map((item) => (
+                {groupItems.map((item, groupIndex) => {
+                  const atTop = groupIndex === 0;
+                  const atBottom = groupIndex === groupItems.length - 1;
+                  const reorderBusy = reorderingId !== null;
+                  return (
                   <div
                     key={item.id}
                     className={`flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4 transition-colors ${
@@ -624,26 +687,60 @@ function MenuPanel() {
                         <p className="mt-1 text-xs text-bordeaux-600">Cliquer pour modifier</p>
                       </div>
                     </button>
-                    <button
-                      type="button"
-                      title="Supprimer"
-                      className="flex-shrink-0 rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void onDelete(item.id);
-                      }}
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
+                    <div className="flex shrink-0 flex-col items-stretch gap-1 sm:flex-row sm:items-center">
+                      <button
+                        type="button"
+                        aria-label="Monter dans la liste"
+                        title="Monter"
+                        disabled={atTop || reorderBusy}
+                        className="rounded-lg p-1.5 text-ardoise-600 transition-colors hover:bg-creme-100 disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void onReorder(item.id, "up");
+                        }}
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Descendre dans la liste"
+                        title="Descendre"
+                        disabled={atBottom || reorderBusy}
+                        className="rounded-lg p-1.5 text-ardoise-600 transition-colors hover:bg-creme-100 disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void onReorder(item.id, "down");
+                        }}
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        title="Supprimer"
+                        disabled={reorderBusy}
+                        className="rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-25"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void onDelete(item.id);
+                        }}
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ))}
           </div>

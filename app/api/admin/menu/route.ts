@@ -108,6 +108,20 @@ function makeId() {
   return `itm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function insertNewItemAtEndOfCategory(items: MenuItem[], item: MenuItem): MenuItem[] {
+  const cat = normalizeMenuCategory(item.category || "");
+  const next = [...items];
+  let insertAt = next.length;
+  for (let i = next.length - 1; i >= 0; i--) {
+    if (normalizeMenuCategory(next[i].category || "") === cat) {
+      insertAt = i + 1;
+      break;
+    }
+  }
+  next.splice(insertAt, 0, item);
+  return next;
+}
+
 export async function POST(req: Request) {
   if (!isAdminAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -118,7 +132,7 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json()) as {
-    action?: "list" | "create" | "update" | "delete" | "presign_photo";
+    action?: "list" | "create" | "update" | "delete" | "presign_photo" | "reorder";
     id?: string;
     name?: string;
     description?: string;
@@ -129,6 +143,7 @@ export async function POST(req: Request) {
     partner_url?: string | null;
     partner_logo_url?: string | null;
     content_type?: string;
+    direction?: "up" | "down";
   };
   const action = body.action || "list";
 
@@ -161,7 +176,7 @@ export async function POST(req: Request) {
       partner_url: body.partner_url?.trim() || null,
       partner_logo_url: body.partner_logo_url?.trim() || null,
     };
-    const next = { items: [item, ...(menu.items || [])] };
+    const next = { items: insertNewItemAtEndOfCategory(menu.items || [], item) };
     await saveMenu(st, next);
     return NextResponse.json({ ok: true, id: item.id });
   }
@@ -200,6 +215,41 @@ export async function POST(req: Request) {
     };
     await saveMenu(st, next);
     return NextResponse.json({ ok: true, id: body.id });
+  }
+
+  if (action === "reorder") {
+    if (!body.id) return NextResponse.json({ error: "id requis" }, { status: 400 });
+    const direction = body.direction === "up" || body.direction === "down" ? body.direction : null;
+    if (!direction) {
+      return NextResponse.json({ error: "direction requis (up ou down)" }, { status: 400 });
+    }
+    const items = [...(menu.items || [])];
+    const idx = items.findIndex((x) => x.id === body.id);
+    if (idx === -1) return NextResponse.json({ error: "Plat introuvable" }, { status: 404 });
+    const cat = normalizeMenuCategory(items[idx].category || "");
+    const indices: number[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (normalizeMenuCategory(items[i].category || "") === cat) indices.push(i);
+    }
+    const posInCat = indices.indexOf(idx);
+    if (posInCat === -1) return NextResponse.json({ error: "Catégorie invalide" }, { status: 400 });
+    const neighborIdx =
+      direction === "up"
+        ? posInCat > 0
+          ? indices[posInCat - 1]
+          : null
+        : posInCat < indices.length - 1
+          ? indices[posInCat + 1]
+          : null;
+    if (neighborIdx === null) {
+      return NextResponse.json({ ok: true, unchanged: true });
+    }
+    const a = items[idx];
+    const b = items[neighborIdx];
+    items[idx] = b;
+    items[neighborIdx] = a;
+    await saveMenu(st, { items });
+    return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
